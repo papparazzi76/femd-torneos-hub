@@ -26,12 +26,19 @@ function PosterCard({
   const meshRef = useRef<THREE.Mesh>(null);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
 
-  useState(() => {
+  useEffect(() => {
     const loader = new THREE.TextureLoader();
-    loader.load(poster.url, (loadedTexture) => {
-      setTexture(loadedTexture);
-    });
-  });
+    loader.load(
+      poster.url, 
+      (loadedTexture) => {
+        setTexture(loadedTexture);
+      },
+      undefined,
+      (error) => {
+        console.error('Error loading texture:', poster.url, error);
+      }
+    );
+  }, [poster.url]);
 
   useFrame((state) => {
     if (meshRef.current) {
