@@ -161,6 +161,16 @@ All colors MUST be HSL.
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-accent;
   }
+
+  /* 3D Perspective for carousel */
+  .perspective-container {
+    perspective: 1500px;
+    transform-style: preserve-3d;
+  }
+
+  .carousel-slide {
+    transform-style: preserve-3d;
+  }
 }
 
 @keyframes fadeIn {
