@@ -94,11 +94,11 @@ export function HomePage() {
             Organizadores profesionales de eventos y torneos de fútbol
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-scale-in">
-            <Button size="lg" className="gradient-emerald text-white hover:opacity-90">
-              Ver Torneos
+            <Button size="lg" className="gradient-emerald text-white hover:opacity-90" asChild>
+              <a href="/torneos">Ver Torneos</a>
             </Button>
-            <Button size="lg" variant="outline" className="bg-white/10 border-white text-white hover:bg-white hover:text-primary">
-              Contactar
+            <Button size="lg" variant="outline" className="bg-white/10 border-white text-white hover:bg-white hover:text-primary" asChild>
+              <a href="/contacto">Contactar</a>
             </Button>
           </div>
         </div>
