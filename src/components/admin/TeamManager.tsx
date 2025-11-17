@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { teamService } from '@/services/teamService';
-import { Team } from '@/types/database';
+import { participantService } from '@/services/participantService';
+import { Team, Participant } from '@/types/database';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Save, X, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Upload, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 export const TeamManager = () => {
@@ -15,12 +16,23 @@ export const TeamManager = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showParticipants, setShowParticipants] = useState(false);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [editingParticipantId, setEditingParticipantId] = useState<string | null>(null);
+  const [showParticipantForm, setShowParticipantForm] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     logo_url: '',
     description: '',
     founded_year: '',
     colors: ''
+  });
+  const [participantFormData, setParticipantFormData] = useState({
+    name: '',
+    position: '',
+    number: '',
+    photo_url: '',
+    birth_date: ''
   });
   const { toast } = useToast();
 
@@ -83,6 +95,88 @@ export const TeamManager = () => {
     });
     setEditingId(team.id);
     setShowForm(true);
+    setShowParticipants(false);
+    loadParticipants(team.id);
+  };
+
+  const loadParticipants = async (teamId: string) => {
+    try {
+      const data = await participantService.getByTeam(teamId);
+      setParticipants(data);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudieron cargar los participantes',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleParticipantSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingId) return;
+
+    try {
+      const participantData = {
+        team_id: editingId,
+        name: participantFormData.name.trim(),
+        position: participantFormData.position.trim() || undefined,
+        number: participantFormData.number ? parseInt(participantFormData.number) : undefined,
+        photo_url: participantFormData.photo_url.trim() || undefined,
+        birth_date: participantFormData.birth_date || undefined
+      };
+
+      if (editingParticipantId) {
+        await participantService.update(editingParticipantId, participantData);
+        toast({ title: 'Participante actualizado con éxito' });
+      } else {
+        await participantService.create(participantData);
+        toast({ title: 'Participante creado con éxito' });
+      }
+
+      resetParticipantForm();
+      loadParticipants(editingId);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudo guardar el participante',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleEditParticipant = (participant: Participant) => {
+    setParticipantFormData({
+      name: participant.name,
+      position: participant.position || '',
+      number: participant.number?.toString() || '',
+      photo_url: participant.photo_url || '',
+      birth_date: participant.birth_date || ''
+    });
+    setEditingParticipantId(participant.id);
+    setShowParticipantForm(true);
+  };
+
+  const handleDeleteParticipant = async (id: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este participante?')) return;
+
+    try {
+      await participantService.delete(id);
+      toast({ title: 'Participante eliminado con éxito' });
+      if (editingId) loadParticipants(editingId);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudo eliminar el participante',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const resetParticipantForm = () => {
+    setParticipantFormData({ name: '', position: '', number: '', photo_url: '', birth_date: '' });
+    setEditingParticipantId(null);
+    setShowParticipantForm(false);
   };
 
   const handleDelete = async (id: string) => {
@@ -162,6 +256,9 @@ export const TeamManager = () => {
     setFormData({ name: '', logo_url: '', description: '', founded_year: '', colors: '' });
     setEditingId(null);
     setShowForm(false);
+    setShowParticipants(false);
+    setParticipants([]);
+    resetParticipantForm();
   };
 
   if (loading) {
@@ -273,11 +370,148 @@ export const TeamManager = () => {
                   <Save className="w-4 h-4 mr-2" />
                   Guardar
                 </Button>
+                {editingId && (
+                  <Button 
+                    type="button" 
+                    variant="secondary"
+                    onClick={() => setShowParticipants(!showParticipants)}
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    {showParticipants ? 'Ocultar' : 'Gestionar'} Participantes
+                  </Button>
+                )}
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
               </div>
             </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {showParticipants && editingId && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center">
+              <span>Participantes del Equipo</span>
+              <Button 
+                size="sm"
+                onClick={() => setShowParticipantForm(!showParticipantForm)}
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                {showParticipantForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                {showParticipantForm ? 'Cancelar' : 'Nuevo Participante'}
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {showParticipantForm && (
+              <form onSubmit={handleParticipantSubmit} className="space-y-4 p-4 border rounded-lg">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Nombre *</label>
+                  <Input
+                    value={participantFormData.name}
+                    onChange={(e) => setParticipantFormData({ ...participantFormData, name: e.target.value })}
+                    placeholder="Nombre completo"
+                    required
+                    maxLength={100}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Posición</label>
+                    <Input
+                      value={participantFormData.position}
+                      onChange={(e) => setParticipantFormData({ ...participantFormData, position: e.target.value })}
+                      placeholder="Delantero, Defensa..."
+                      maxLength={50}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Dorsal</label>
+                    <Input
+                      value={participantFormData.number}
+                      onChange={(e) => setParticipantFormData({ ...participantFormData, number: e.target.value })}
+                      placeholder="10"
+                      type="number"
+                      min="0"
+                      max="99"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Fecha de Nacimiento</label>
+                  <Input
+                    value={participantFormData.birth_date}
+                    onChange={(e) => setParticipantFormData({ ...participantFormData, birth_date: e.target.value })}
+                    type="date"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">URL de Foto</label>
+                  <Input
+                    value={participantFormData.photo_url}
+                    onChange={(e) => setParticipantFormData({ ...participantFormData, photo_url: e.target.value })}
+                    placeholder="https://..."
+                    type="url"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
+                    <Save className="w-4 h-4 mr-2" />
+                    {editingParticipantId ? 'Actualizar' : 'Guardar'}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={resetParticipantForm}>
+                    Cancelar
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            <div className="grid gap-3">
+              {participants.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">
+                  No hay participantes en este equipo
+                </p>
+              ) : (
+                participants.map((participant) => (
+                  <div key={participant.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      {participant.photo_url && (
+                        <img 
+                          src={participant.photo_url} 
+                          alt={participant.name} 
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      )}
+                      <div>
+                        <p className="font-medium">{participant.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {participant.position && `${participant.position}`}
+                          {participant.number && ` · #${participant.number}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => handleEditParticipant(participant)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => handleDeleteParticipant(participant.id)}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
