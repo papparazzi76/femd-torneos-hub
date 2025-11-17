@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Trophy, Users, Calendar, TrendingUp } from "lucide-react";
 import { sponsorService } from "@/services/sponsorService";
 import { Sponsor } from "@/types/database";
+import { TournamentCarousel } from "@/components/TournamentCarousel";
 
 export function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -218,6 +219,9 @@ export function HomePage() {
           </div>
         </section>
       )}
+
+      {/* Tournament Gallery */}
+      <TournamentCarousel />
 
       {/* CTA Section */}
       <section className="py-20 gradient-emerald">
