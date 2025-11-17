@@ -27,7 +27,7 @@ export function Header() {
     { name: "Equipos", href: "/equipos", isRoute: true },
     { name: "Calendario", href: "#calendar", isAnchor: true },
     { name: "Noticias", href: "/noticias", isRoute: true },
-    { name: "Contacto", href: "#contact", isAnchor: true },
+    { name: "Contacto", href: "/contacto", isRoute: true },
   ];
 
   // Add Admin link if user is admin
