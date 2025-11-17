@@ -6,6 +6,7 @@ import { eventService } from "@/services/eventService";
 import { Event } from "@/types/database";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { TournamentGallery } from "@/components/TournamentGallery";
 
 export function TournamentsPage() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -56,6 +57,9 @@ export function TournamentsPage() {
             Desde competencias locales hasta grandes campeonatos.
           </p>
         </div>
+
+        {/* Tournament Posters Gallery */}
+        <TournamentGallery />
 
         {/* Upcoming Tournaments */}
         {upcomingEvents.length > 0 && (
