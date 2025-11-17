@@ -119,24 +119,37 @@ export function PosterGallery3D() {
   useEffect(() => {
     const loadPosters = async () => {
       try {
-        const { data, error } = await supabase
-          .from("events")
-          .select("id, title, poster_url")
-          .not("poster_url", "is", null)
-          .order("date", { ascending: false });
+        // Listar archivos del bucket "carteles"
+        const { data, error } = await supabase.storage
+          .from("carteles")
+          .list("", { limit: 100, sortBy: { column: "name", order: "desc" } });
 
         if (error) throw error;
 
-        if (data) {
-          const formattedPosters: Poster[] = data.map((event) => ({
-            id: event.id,
-            url: event.poster_url || "",
-            title: event.title,
-          }));
-          setPosters(formattedPosters);
-        }
+        const files = (data || []).filter(
+          (f) => /\.(png|jpe?g|webp)$/i.test(f.name) && !f.name.startsWith(".")
+        );
+
+        const formattedPosters: Poster[] = files.map((file) => {
+          const { data: pub } = supabase.storage
+            .from("carteles")
+            .getPublicUrl(file.name);
+
+          const raw = file.name.replace(/\.(png|jpe?g|webp)$/i, "");
+          const pretty = raw
+            .replace(/[-_]+/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase());
+
+          return {
+            id: (file as any).id || file.name,
+            url: pub.publicUrl,
+            title: pretty,
+          };
+        });
+
+        setPosters(formattedPosters);
       } catch (error) {
-        console.error("Error loading posters:", error);
+        console.error("Error loading posters from bucket:", error);
       } finally {
         setLoading(false);
       }
