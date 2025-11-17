@@ -12,6 +12,7 @@ import { AdminDashboard } from "@/pages/AdminDashboard";
 import { TeamsPage } from "@/pages/TeamsPage";
 import { BlogPage } from "@/pages/BlogPage";
 import { ContactPage } from "@/pages/ContactPage";
+import { SponsorsPage } from "@/pages/SponsorsPage";
 import { ChatBot } from "@/components/ChatBot";
 import NotFound from "./pages/NotFound";
 
@@ -32,6 +33,7 @@ const App = () => (
                   <Route path="/" element={<HomePage />} />
                   <Route path="/equipos" element={<TeamsPage />} />
                   <Route path="/noticias" element={<BlogPage />} />
+                  <Route path="/patrocinadores" element={<SponsorsPage />} />
                   <Route path="/contacto" element={<ContactPage />} />
                   <Route path="/admin" element={<AdminDashboard />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
