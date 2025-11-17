@@ -13,6 +13,7 @@ import {
   Loader2,
   ExternalLink
 } from 'lucide-react';
+import { UploadCartelesButton } from './UploadCartelesButton';
 
 interface StorageFile {
   name: string;
@@ -190,34 +191,37 @@ export const StorageManager = () => {
                     <FileImage className="w-5 h-5 text-emerald-600" />
                     <span>{bucket.name}</span>
                   </div>
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleUpload(bucket.id, e)}
-                      className="hidden"
-                      disabled={uploading[bucket.id]}
-                    />
-                    <Button
-                      disabled={uploading[bucket.id]}
-                      className="bg-emerald-600 hover:bg-emerald-700"
-                      asChild
-                    >
-                      <span>
-                        {uploading[bucket.id] ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Subiendo...
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="w-4 h-4 mr-2" />
-                            Subir Archivo
-                          </>
-                        )}
-                      </span>
-                    </Button>
-                  </label>
+                  <div className="flex gap-2">
+                    {bucket.id === 'carteles' && <UploadCartelesButton />}
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleUpload(bucket.id, e)}
+                        className="hidden"
+                        disabled={uploading[bucket.id]}
+                      />
+                      <Button
+                        disabled={uploading[bucket.id]}
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                        asChild
+                      >
+                        <span>
+                          {uploading[bucket.id] ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Subiendo...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4 mr-2" />
+                              Subir Archivo
+                            </>
+                          )}
+                        </span>
+                      </Button>
+                    </label>
+                  </div>
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">{bucket.description}</p>
               </CardHeader>
