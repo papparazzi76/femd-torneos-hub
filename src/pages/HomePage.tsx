@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Trophy, Users, Calendar, TrendingUp } from "lucide-react";
 import { sponsorService } from "@/services/sponsorService";
 import { Sponsor } from "@/types/database";
+import { EventCarousel3D } from "@/components/EventCarousel3D";
 import { TournamentCarousel } from "@/components/TournamentCarousel";
 
 export function HomePage() {
@@ -219,6 +220,9 @@ export function HomePage() {
           </div>
         </section>
       )}
+
+      {/* Event Gallery 3D */}
+      <EventCarousel3D />
 
       {/* Tournament Gallery */}
       <TournamentCarousel />
