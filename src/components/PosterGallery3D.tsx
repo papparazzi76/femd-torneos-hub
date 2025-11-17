@@ -54,6 +54,8 @@ function PosterCard({
         <meshStandardMaterial 
           map={texture}
           side={THREE.DoubleSide}
+          transparent={false}
+          opacity={1}
         />
       </mesh>
     </group>
