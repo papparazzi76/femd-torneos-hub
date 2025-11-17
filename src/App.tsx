@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { HomePage } from "@/pages/HomePage";
+import { AdminDashboard } from "@/pages/AdminDashboard";
 import { ChatBot } from "@/components/ChatBot";
 import NotFound from "./pages/NotFound";
 
@@ -26,6 +27,7 @@ const App = () => (
               <main className="flex-1">
                 <Routes>
                   <Route path="/" element={<HomePage />} />
+                  <Route path="/admin" element={<AdminDashboard />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

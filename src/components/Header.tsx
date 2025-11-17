@@ -29,6 +29,11 @@ export function Header() {
     { name: "Contacto", href: "#contact" },
   ];
 
+  // Add Admin link if user is admin
+  const adminLink = user?.email === 'mariscalimagen@gmail.com' 
+    ? { name: "Admin", href: "/admin", isRoute: true }
+    : null;
+
   return (
     <>
       <header
@@ -61,6 +66,14 @@ export function Header() {
                   {link.name}
                 </a>
               ))}
+              {adminLink && (
+                <a
+                  href={adminLink.href}
+                  className="text-emerald-600 hover:text-emerald-700 transition-colors duration-200 font-semibold"
+                >
+                  {adminLink.name}
+                </a>
+              )}
             </nav>
 
             {/* Auth & Theme Controls */}
@@ -110,6 +123,15 @@ export function Header() {
                   {link.name}
                 </a>
               ))}
+              {adminLink && (
+                <a
+                  href={adminLink.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-lg text-emerald-600 hover:text-emerald-700 transition-colors font-semibold"
+                >
+                  {adminLink.name}
+                </a>
+              )}
               <div className="pt-4 border-t border-border">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-sm text-muted-foreground">Tema</span>

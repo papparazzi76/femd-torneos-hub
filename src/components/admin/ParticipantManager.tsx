@@ -1,0 +1,252 @@
+import { useState, useEffect } from 'react';
+import { participantService } from '@/services/participantService';
+import { teamService } from '@/services/teamService';
+import { Participant, Team } from '@/types/database';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+
+export const ParticipantManager = () => {
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    team_id: '',
+    name: '',
+    position: '',
+    number: '',
+    photo_url: '',
+    birth_date: ''
+  });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const [participantsData, teamsData] = await Promise.all([
+        participantService.getAll(),
+        teamService.getAll()
+      ]);
+      setParticipants(participantsData);
+      setTeams(teamsData);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudieron cargar los datos',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const participantData = {
+        team_id: formData.team_id || undefined,
+        name: formData.name.trim(),
+        position: formData.position.trim() || undefined,
+        number: formData.number ? parseInt(formData.number) : undefined,
+        photo_url: formData.photo_url.trim() || undefined,
+        birth_date: formData.birth_date || undefined
+      };
+
+      if (editingId) {
+        await participantService.update(editingId, participantData);
+        toast({ title: 'Participante actualizado con éxito' });
+      } else {
+        await participantService.create(participantData);
+        toast({ title: 'Participante creado con éxito' });
+      }
+
+      resetForm();
+      loadData();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudo guardar el participante',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleEdit = (participant: Participant) => {
+    setFormData({
+      team_id: participant.team_id || '',
+      name: participant.name,
+      position: participant.position || '',
+      number: participant.number?.toString() || '',
+      photo_url: participant.photo_url || '',
+      birth_date: participant.birth_date || ''
+    });
+    setEditingId(participant.id);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar este participante?')) return;
+
+    try {
+      await participantService.delete(id);
+      toast({ title: 'Participante eliminado con éxito' });
+      loadData();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudo eliminar el participante',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({ team_id: '', name: '', position: '', number: '', photo_url: '', birth_date: '' });
+    setEditingId(null);
+    setShowForm(false);
+  };
+
+  const getTeamName = (teamId?: string) => {
+    if (!teamId) return 'Sin equipo';
+    return teams.find(t => t.id === teamId)?.name || 'Sin equipo';
+  };
+
+  if (loading) {
+    return <div className="text-center py-8">Cargando participantes...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Gestión de Participantes</h2>
+        <Button onClick={() => setShowForm(!showForm)} className="bg-emerald-600 hover:bg-emerald-700">
+          {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+          {showForm ? 'Cancelar' : 'Nuevo Participante'}
+        </Button>
+      </div>
+
+      {showForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{editingId ? 'Editar Participante' : 'Nuevo Participante'}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Nombre *</label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Nombre del participante"
+                  required
+                  maxLength={100}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Equipo</label>
+                <Select value={formData.team_id} onValueChange={(value) => setFormData({ ...formData, team_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar equipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Posición</label>
+                  <Input
+                    value={formData.position}
+                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                    placeholder="Delantero, Defensa..."
+                    maxLength={50}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Número</label>
+                  <Input
+                    value={formData.number}
+                    onChange={(e) => setFormData({ ...formData, number: e.target.value })}
+                    placeholder="10"
+                    type="number"
+                    min="0"
+                    max="99"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">URL de Foto</label>
+                <Input
+                  value={formData.photo_url}
+                  onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })}
+                  placeholder="https://..."
+                  type="url"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Fecha de Nacimiento</label>
+                <Input
+                  value={formData.birth_date}
+                  onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+                  type="date"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
+                  <Save className="w-4 h-4 mr-2" />
+                  Guardar
+                </Button>
+                <Button type="button" variant="outline" onClick={resetForm}>
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {participants.map((participant) => (
+          <Card key={participant.id}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="truncate">{participant.name}</span>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => handleEdit(participant)}>
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => handleDelete(participant.id)}>
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                  </Button>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {participant.photo_url && (
+                <img src={participant.photo_url} alt={participant.name} className="w-20 h-20 object-cover rounded-full" />
+              )}
+              <p className="text-sm"><strong>Equipo:</strong> {getTeamName(participant.team_id)}</p>
+              {participant.position && (
+                <p className="text-sm"><strong>Posición:</strong> {participant.position}</p>
+              )}
+              {participant.number && (
+                <p className="text-sm"><strong>Número:</strong> {participant.number}</p>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
