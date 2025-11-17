@@ -5,12 +5,12 @@ import { toast } from "sonner";
 import { Upload } from "lucide-react";
 
 const NEW_CARTELES = [
-  { path: "user-uploads://torneo-villa-aranda-2025-2.jpg", name: "torneo-villa-aranda-2025-2.jpg" },
-  { path: "user-uploads://copaa-cyl-penafiel-2.jpg", name: "copa-cyl-penafiel-2.jpg" },
-  { path: "user-uploads://copa-rioseco-2025-2.jpg", name: "copa-rioseco-2025-2.jpg" },
-  { path: "user-uploads://copa-rioseco-2024-2.jpg", name: "copa-rioseco-2024-2.jpg" },
-  { path: "user-uploads://copa-cyl-2025-2.jpg", name: "copa-cyl-2025-2.jpg" },
-  { path: "user-uploads://copa-cyl-2024-2.jpg", name: "copa-cyl-2024-2.jpg" },
+  { path: "user-uploads://torneo-villa-aranda-2025-3.jpg", name: "torneo-villa-aranda-2025.jpg" },
+  { path: "user-uploads://copaa-cyl-penafiel-3.jpg", name: "copa-cyl-penafiel.jpg" },
+  { path: "user-uploads://copa-rioseco-2025-3.jpg", name: "copa-rioseco-2025.jpg" },
+  { path: "user-uploads://copa-rioseco-2024-3.jpg", name: "copa-rioseco-2024.jpg" },
+  { path: "user-uploads://copa-cyl-2025-3.jpg", name: "copa-cyl-2025.jpg" },
+  { path: "user-uploads://copa-cyl-2024-3.jpg", name: "copa-cyl-2024.jpg" },
 ];
 
 export function UploadNewCarteles() {
