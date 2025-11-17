@@ -9,6 +9,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { HomePage } from "@/pages/HomePage";
 import { AdminDashboard } from "@/pages/AdminDashboard";
+import { AuthPage } from "@/pages/AuthPage";
 import { TeamsPage } from "@/pages/TeamsPage";
 import { TournamentsPage } from "@/pages/TournamentsPage";
 import { BlogPage } from "@/pages/BlogPage";
@@ -37,6 +38,7 @@ const App = () => (
                   <Route path="/noticias" element={<BlogPage />} />
                   <Route path="/patrocinadores" element={<SponsorsPage />} />
                   <Route path="/contacto" element={<ContactPage />} />
+                  <Route path="/auth" element={<AuthPage />} />
                   <Route path="/admin" element={<AdminDashboard />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />

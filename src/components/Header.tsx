@@ -1,18 +1,31 @@
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
-import { AuthModal } from "./AuthModal";
+import { roleService } from "@/services/roleService";
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { theme } = useTheme();
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (user) {
+        const result = await roleService.checkAdminStatus();
+        setIsAdmin(result.isAdmin);
+      } else {
+        setIsAdmin(false);
+      }
+    };
+    checkAdminStatus();
+  }, [user]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,7 +45,7 @@ export function Header() {
   ];
 
   // Add Admin link if user is admin
-  const adminLink = user?.email === 'mariscalimagen@gmail.com' 
+  const adminLink = isAdmin
     ? { name: "Admin", href: "/admin", isRoute: true }
     : null;
 
@@ -104,7 +117,7 @@ export function Header() {
                 </div>
               ) : (
                 <Button
-                  onClick={() => setIsAuthModalOpen(true)}
+                  onClick={() => navigate('/auth')}
                   variant="default"
                   size="sm"
                 >
@@ -174,7 +187,7 @@ export function Header() {
                 ) : (
                   <Button
                     onClick={() => {
-                      setIsAuthModalOpen(true);
+                      navigate('/auth');
                       setIsMobileMenuOpen(false);
                     }}
                     variant="default"
@@ -188,11 +201,6 @@ export function Header() {
           </div>
         )}
       </header>
-
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-      />
     </>
   );
 }
