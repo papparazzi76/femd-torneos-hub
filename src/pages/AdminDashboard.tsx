@@ -8,19 +8,45 @@ import { PostManager } from '@/components/admin/PostManager';
 import { SponsorManager } from '@/components/admin/SponsorManager';
 import { StorageManager } from '@/components/admin/StorageManager';
 import { Shield, AlertCircle } from 'lucide-react';
+import { roleService } from '@/services/roleService';
+import { useToast } from '@/hooks/use-toast';
 
 export const AdminDashboard = () => {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is admin (email-based check as per requirements)
-    if (user?.email === 'mariscalimagen@gmail.com') {
-      setIsAdmin(true);
-    }
-    setLoading(false);
-  }, [user]);
+    const checkAdminStatus = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const result = await roleService.checkAdminStatus();
+        
+        if (result.error) {
+          console.error('Error verificando permisos de admin:', result.error);
+          toast({
+            title: "Error",
+            description: "No se pudo verificar los permisos de administrador",
+            variant: "destructive",
+          });
+        }
+        
+        setIsAdmin(result.isAdmin);
+      } catch (error) {
+        console.error('Error inesperado:', error);
+        setIsAdmin(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user, toast]);
 
   if (loading) {
     return (
