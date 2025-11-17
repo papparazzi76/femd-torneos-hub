@@ -26,6 +26,7 @@ export interface Event {
   date: string;
   location?: string;
   team_ids?: string[];
+  poster_url?: string;
   created_at: string;
 }
 
