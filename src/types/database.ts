@@ -16,6 +16,11 @@ export interface Participant {
   number?: number;
   photo_url?: string;
   birth_date?: string;
+  age?: number;
+  matches_played?: number;
+  goals_scored?: number;
+  yellow_cards?: number;
+  red_cards?: number;
   created_at: string;
 }
 

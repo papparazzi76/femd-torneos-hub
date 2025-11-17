@@ -49,34 +49,49 @@ export type Database = {
       }
       participants: {
         Row: {
+          age: number | null
           birth_date: string | null
           created_at: string | null
+          goals_scored: number | null
           id: string
+          matches_played: number | null
           name: string
           number: number | null
           photo_url: string | null
           position: string | null
+          red_cards: number | null
           team_id: string | null
+          yellow_cards: number | null
         }
         Insert: {
+          age?: number | null
           birth_date?: string | null
           created_at?: string | null
+          goals_scored?: number | null
           id?: string
+          matches_played?: number | null
           name: string
           number?: number | null
           photo_url?: string | null
           position?: string | null
+          red_cards?: number | null
           team_id?: string | null
+          yellow_cards?: number | null
         }
         Update: {
+          age?: number | null
           birth_date?: string | null
           created_at?: string | null
+          goals_scored?: number | null
           id?: string
+          matches_played?: number | null
           name?: string
           number?: number | null
           photo_url?: string | null
           position?: string | null
+          red_cards?: number | null
           team_id?: string | null
+          yellow_cards?: number | null
         }
         Relationships: [
           {
