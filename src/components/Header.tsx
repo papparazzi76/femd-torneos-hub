@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,11 +23,11 @@ export function Header() {
   }, []);
 
   const navLinks = [
-    { name: "Inicio", href: "#home" },
-    { name: "Equipos", href: "#teams" },
-    { name: "Calendario", href: "#calendar" },
-    { name: "Noticias", href: "#news" },
-    { name: "Contacto", href: "#contact" },
+    { name: "Inicio", href: "#home", isAnchor: true },
+    { name: "Equipos", href: "/equipos", isRoute: true },
+    { name: "Calendario", href: "#calendar", isAnchor: true },
+    { name: "Noticias", href: "#news", isAnchor: true },
+    { name: "Contacto", href: "#contact", isAnchor: true },
   ];
 
   // Add Admin link if user is admin
@@ -46,33 +47,45 @@ export function Header() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
-            <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2">
+            <Link to="/" className="flex items-center space-x-2">
               <div className="w-12 h-12 gradient-emerald rounded-lg flex items-center justify-center">
                 <span className="text-2xl font-bold text-white">F</span>
               </div>
               <span className="text-xl font-bold text-foreground">
                 FEMD TORNEOS
               </span>
-            </div>
+            </Link>
+          </div>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
               {navLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  className="text-foreground/80 hover:text-primary transition-colors duration-200 font-medium"
-                >
-                  {link.name}
-                </a>
+                link.isRoute ? (
+                  <Link
+                    key={link.name}
+                    to={link.href}
+                    className="text-foreground/80 hover:text-primary transition-colors duration-200 font-medium"
+                  >
+                    {link.name}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.name}
+                    href={link.href}
+                    className="text-foreground/80 hover:text-primary transition-colors duration-200 font-medium"
+                  >
+                    {link.name}
+                  </a>
+                )
               ))}
               {adminLink && (
-                <a
-                  href={adminLink.href}
+                <Link
+                  to={adminLink.href}
                   className="text-emerald-600 hover:text-emerald-700 transition-colors duration-200 font-semibold"
                 >
                   {adminLink.name}
-                </a>
+                </Link>
               )}
             </nav>
 
@@ -114,23 +127,34 @@ export function Header() {
           <div className="md:hidden fixed inset-0 top-20 bg-background z-40 animate-fade-in">
             <nav className="flex flex-col p-6 space-y-6">
               {navLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-lg text-foreground hover:text-primary transition-colors"
-                >
-                  {link.name}
-                </a>
+                link.isRoute ? (
+                  <Link
+                    key={link.name}
+                    to={link.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-lg text-foreground hover:text-primary transition-colors"
+                  >
+                    {link.name}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.name}
+                    href={link.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-lg text-foreground hover:text-primary transition-colors"
+                  >
+                    {link.name}
+                  </a>
+                )
               ))}
               {adminLink && (
-                <a
-                  href={adminLink.href}
+                <Link
+                  to={adminLink.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="text-lg text-emerald-600 hover:text-emerald-700 transition-colors font-semibold"
                 >
                   {adminLink.name}
-                </a>
+                </Link>
               )}
               <div className="pt-4 border-t border-border">
                 <div className="flex items-center justify-between mb-4">
