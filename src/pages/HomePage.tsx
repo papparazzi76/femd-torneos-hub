@@ -173,21 +173,6 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* 3D Posters Gallery Section */}
-      <section className="py-20 bg-card">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16 animate-fade-in">
-            <h2 className="text-4xl font-bold text-foreground mb-4">
-              Nuestros Torneos
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Explora nuestra colección de torneos en una experiencia 3D interactiva
-            </p>
-          </div>
-          <PosterGallery3D />
-        </div>
-      </section>
-
       {/* Sponsors Section */}
       {sponsors.length > 0 && (
         <section className="py-20 bg-card">
