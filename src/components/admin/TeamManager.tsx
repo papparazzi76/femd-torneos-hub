@@ -6,13 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Upload } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export const TeamManager = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     logo_url: '',
@@ -99,6 +101,63 @@ export const TeamManager = () => {
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Error',
+        description: 'Por favor selecciona un archivo de imagen',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validar tamaño (máximo 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: 'Error',
+        description: 'La imagen no puede superar los 2MB',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = `logos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('imagenes-web')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('imagenes-web')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, logo_url: publicUrl });
+      
+      toast({
+        title: 'Imagen subida',
+        description: 'El escudo se ha subido correctamente'
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudo subir la imagen',
+        variant: 'destructive'
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({ name: '', logo_url: '', description: '', founded_year: '', colors: '' });
     setEditingId(null);
@@ -137,13 +196,46 @@ export const TeamManager = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">URL del Logo</label>
-                <Input
-                  value={formData.logo_url}
-                  onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-                  placeholder="https://..."
-                  type="url"
-                />
+                <label className="block text-sm font-medium mb-1">Escudo del Club</label>
+                <div className="space-y-2">
+                  {formData.logo_url && (
+                    <div className="flex items-center gap-2">
+                      <img src={formData.logo_url} alt="Logo preview" className="w-16 h-16 object-contain border rounded" />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFormData({ ...formData, logo_url: '' })}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      disabled={uploading}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={uploading}
+                      onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploading ? 'Subiendo...' : 'Subir'}
+                    </Button>
+                  </div>
+                  <Input
+                    value={formData.logo_url}
+                    onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
+                    placeholder="O pega la URL directamente"
+                    type="url"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Descripción</label>
