@@ -4,22 +4,20 @@ import { PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
-const posters = [
-  { id: 1, url: "/temp-carteles/copa-cyl-2024.jpg", title: "Copa CyL 2024" },
-  { id: 2, url: "/temp-carteles/copa-cyl-2025.jpg", title: "Copa CyL 2025" },
-  { id: 3, url: "/temp-carteles/copa-cyl-penafiel.jpg", title: "Copa CyL Peñafiel" },
-  { id: 4, url: "/temp-carteles/copa-rioseco-2024.jpg", title: "Copa Rioseco 2024" },
-  { id: 5, url: "/temp-carteles/copa-rioseco-2025.jpg", title: "Copa Rioseco 2025" },
-  { id: 6, url: "/temp-carteles/torneo-villa-aranda-2025.jpg", title: "Torneo Villa Aranda 2025" },
-];
+interface Poster {
+  id: string;
+  url: string;
+  title: string;
+}
 
 function PosterCard({ 
   poster, 
   position, 
   isActive 
 }: { 
-  poster: { id: number; url: string; title: string }; 
+  poster: Poster; 
   position: [number, number, number]; 
   isActive: boolean;
 }) {
@@ -62,15 +60,17 @@ function PosterCard({
   );
 }
 
-function Scene({ currentIndex }: { currentIndex: number }) {
+function Scene({ currentIndex, posters }: { currentIndex: number; posters: Poster[] }) {
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame(() => {
-    if (groupRef.current) {
+    if (groupRef.current && posters.length > 0) {
       const targetRotation = -currentIndex * (Math.PI * 2) / posters.length;
       groupRef.current.rotation.y += (targetRotation - groupRef.current.rotation.y) * 0.1;
     }
   });
+
+  if (posters.length === 0) return null;
 
   return (
     <>
@@ -113,16 +113,47 @@ function Scene({ currentIndex }: { currentIndex: number }) {
 export function PosterGallery3D() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [posters, setPosters] = useState<Poster[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isPaused) return;
+    const loadPosters = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("events")
+          .select("id, title, poster_url")
+          .not("poster_url", "is", null)
+          .order("date", { ascending: false });
+
+        if (error) throw error;
+
+        if (data) {
+          const formattedPosters: Poster[] = data.map((event) => ({
+            id: event.id,
+            url: event.poster_url || "",
+            title: event.title,
+          }));
+          setPosters(formattedPosters);
+        }
+      } catch (error) {
+        console.error("Error loading posters:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPosters();
+  }, []);
+
+  useEffect(() => {
+    if (isPaused || posters.length === 0) return;
     
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % posters.length);
     }, 5000);
     
     return () => clearInterval(timer);
-  }, [isPaused]);
+  }, [isPaused, posters.length]);
 
   useEffect(() => {
     if (isPaused) {
@@ -144,11 +175,27 @@ export function PosterGallery3D() {
     setIsPaused(true);
   };
 
+  if (loading) {
+    return (
+      <div className="relative w-full h-[600px] bg-gradient-to-b from-background to-card rounded-xl overflow-hidden flex items-center justify-center">
+        <p className="text-muted-foreground">Cargando carteles...</p>
+      </div>
+    );
+  }
+
+  if (posters.length === 0) {
+    return (
+      <div className="relative w-full h-[600px] bg-gradient-to-b from-background to-card rounded-xl overflow-hidden flex items-center justify-center">
+        <p className="text-muted-foreground">No hay carteles disponibles</p>
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full h-[600px] bg-gradient-to-b from-background to-card rounded-xl overflow-hidden">
       <Canvas shadows>
         <Suspense fallback={null}>
-          <Scene currentIndex={currentIndex} />
+          <Scene currentIndex={currentIndex} posters={posters} />
         </Suspense>
       </Canvas>
 
