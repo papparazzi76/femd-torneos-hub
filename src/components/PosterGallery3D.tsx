@@ -1,4 +1,4 @@
-import { useState, useRef, Suspense } from "react";
+import { useState, useRef, Suspense, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
@@ -34,8 +34,9 @@ function PosterCard({
   });
 
   useFrame((state) => {
-    if (meshRef.current && isActive) {
-      meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
+    if (meshRef.current) {
+      // Hacer que el cartel siempre mire hacia la cámara
+      meshRef.current.lookAt(state.camera.position);
     }
   });
 
@@ -46,8 +47,6 @@ function PosterCard({
         <meshStandardMaterial 
           map={texture}
           side={THREE.DoubleSide}
-          transparent
-          opacity={isActive ? 1 : 0.5}
         />
       </mesh>
     </group>
@@ -101,6 +100,14 @@ function Scene({ currentIndex }: { currentIndex: number }) {
 
 export function PosterGallery3D() {
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % posters.length);
+    }, 5000);
+    
+    return () => clearInterval(timer);
+  }, []);
 
   const handlePrevious = () => {
     setCurrentIndex((prev) => (prev - 1 + posters.length) % posters.length);
