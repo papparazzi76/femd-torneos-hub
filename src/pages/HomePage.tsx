@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Trophy, Users, Calendar, TrendingUp } from "lucide-react";
+import { sponsorService } from "@/services/sponsorService";
+import { Sponsor } from "@/types/database";
 
 export function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [sponsors, setSponsors] = useState<Sponsor[]>([]);
 
   const heroImages = [
     "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1920&q=80",
@@ -17,6 +20,18 @@ export function HomePage() {
       setCurrentSlide((prev) => (prev + 1) % heroImages.length);
     }, 5000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const loadSponsors = async () => {
+      try {
+        const data = await sponsorService.getAll();
+        setSponsors(data);
+      } catch (error) {
+        console.error("Error loading sponsors:", error);
+      }
+    };
+    loadSponsors();
   }, []);
 
   const stats = [
@@ -155,6 +170,54 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Sponsors Section */}
+      {sponsors.length > 0 && (
+        <section className="py-20 bg-card">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16 animate-fade-in">
+              <h2 className="text-4xl font-bold text-foreground mb-4">
+                Nuestros Patrocinadores
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Gracias a nuestros patrocinadores por hacer posible cada torneo
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+              {sponsors.map((sponsor, index) => (
+                <Card
+                  key={sponsor.id}
+                  className="p-6 hover-lift hover-glow animate-fade-in flex items-center justify-center"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  {sponsor.logo_url ? (
+                    <a
+                      href={sponsor.website || "#"}
+                      target={sponsor.website ? "_blank" : undefined}
+                      rel={sponsor.website ? "noopener noreferrer" : undefined}
+                      className="w-full h-24 flex items-center justify-center"
+                    >
+                      <img
+                        src={sponsor.logo_url}
+                        alt={sponsor.name}
+                        className="max-w-full max-h-full object-contain grayscale hover:grayscale-0 transition-all duration-300"
+                      />
+                    </a>
+                  ) : (
+                    <div className="text-center">
+                      <p className="font-semibold text-foreground">{sponsor.name}</p>
+                      {sponsor.tier && (
+                        <p className="text-xs text-muted-foreground mt-1">{sponsor.tier}</p>
+                      )}
+                    </div>
+                  )}
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="py-20 gradient-emerald">
