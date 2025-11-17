@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { teamService } from '@/services/teamService';
 import { Team } from '@/types/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Users, Calendar, Palette, Loader2 } from 'lucide-react';
 
 export const TeamsPage = () => {
+  const navigate = useNavigate();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -74,8 +76,9 @@ export const TeamsPage = () => {
             {teams.map((team, index) => (
               <Card 
                 key={team.id}
-                className="group hover-scale overflow-hidden border-2 hover:border-emerald-600/50 transition-all duration-300 hover:shadow-xl animate-fade-in"
+                className="group hover-scale overflow-hidden border-2 hover:border-emerald-600/50 transition-all duration-300 hover:shadow-xl animate-fade-in cursor-pointer"
                 style={{ animationDelay: `${index * 100}ms` }}
+                onClick={() => navigate(`/equipos/${team.id}`)}
               >
                 <CardHeader className="relative pb-0">
                   {/* Team Logo */}

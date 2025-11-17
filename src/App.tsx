@@ -11,6 +11,7 @@ import { HomePage } from "@/pages/HomePage";
 import { AdminDashboard } from "@/pages/AdminDashboard";
 import { AuthPage } from "@/pages/AuthPage";
 import { TeamsPage } from "@/pages/TeamsPage";
+import { TeamDetailPage } from "@/pages/TeamDetailPage";
 import { TournamentsPage } from "@/pages/TournamentsPage";
 import { BlogPage } from "@/pages/BlogPage";
 import { ContactPage } from "@/pages/ContactPage";
@@ -34,6 +35,7 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/equipos" element={<TeamsPage />} />
+                  <Route path="/equipos/:id" element={<TeamDetailPage />} />
                   <Route path="/torneos" element={<TournamentsPage />} />
                   <Route path="/noticias" element={<BlogPage />} />
                   <Route path="/patrocinadores" element={<SponsorsPage />} />
