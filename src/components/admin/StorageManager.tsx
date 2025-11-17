@@ -14,6 +14,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { UploadCartelesButton } from './UploadCartelesButton';
+import { UploadNewCarteles } from './UploadNewCarteles';
 
 interface StorageFile {
   name: string;
@@ -192,7 +193,12 @@ export const StorageManager = () => {
                     <span>{bucket.name}</span>
                   </div>
                   <div className="flex gap-2">
-                    {bucket.id === 'carteles' && <UploadCartelesButton />}
+                    {bucket.id === 'carteles' && (
+                      <>
+                        <UploadCartelesButton />
+                        <UploadNewCarteles />
+                      </>
+                    )}
                     <label className="cursor-pointer">
                       <input
                         type="file"
