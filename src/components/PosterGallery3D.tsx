@@ -76,15 +76,18 @@ function Scene({ currentIndex }: { currentIndex: number }) {
     <>
       <PerspectiveCamera makeDefault position={[0, 0, 10]} fov={50} />
       
-      <ambientLight intensity={0.5} />
-      <spotLight 
-        position={[10, 10, 10]} 
-        angle={0.3} 
-        penumbra={1} 
-        intensity={1}
+      <ambientLight intensity={1.2} />
+      <directionalLight 
+        position={[5, 5, 5]} 
+        intensity={2}
         castShadow
       />
-      <pointLight position={[-10, -10, -10]} intensity={0.5} />
+      <directionalLight 
+        position={[-5, 5, 5]} 
+        intensity={1.5}
+      />
+      <pointLight position={[0, 0, 8]} intensity={1.5} />
+      <pointLight position={[0, 5, 0]} intensity={1} />
 
       <group ref={groupRef}>
         {posters.map((poster, index) => {
