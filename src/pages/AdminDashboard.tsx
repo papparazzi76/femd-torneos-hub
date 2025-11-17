@@ -101,7 +101,7 @@ export const AdminDashboard = () => {
           <TabsList className="grid w-full grid-cols-6 lg:w-auto">
             <TabsTrigger value="teams">Equipos</TabsTrigger>
             <TabsTrigger value="participants">Participantes</TabsTrigger>
-            <TabsTrigger value="events">Eventos</TabsTrigger>
+            <TabsTrigger value="events">Torneos</TabsTrigger>
             <TabsTrigger value="posts">Noticias</TabsTrigger>
             <TabsTrigger value="sponsors">Patrocinadores</TabsTrigger>
             <TabsTrigger value="storage">Archivos</TabsTrigger>
