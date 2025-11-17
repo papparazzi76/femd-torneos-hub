@@ -100,21 +100,36 @@ function Scene({ currentIndex }: { currentIndex: number }) {
 
 export function PosterGallery3D() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
+    if (isPaused) return;
+    
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % posters.length);
     }, 5000);
     
     return () => clearInterval(timer);
-  }, []);
+  }, [isPaused]);
+
+  useEffect(() => {
+    if (isPaused) {
+      const resumeTimer = setTimeout(() => {
+        setIsPaused(false);
+      }, 10000);
+      
+      return () => clearTimeout(resumeTimer);
+    }
+  }, [isPaused]);
 
   const handlePrevious = () => {
     setCurrentIndex((prev) => (prev - 1 + posters.length) % posters.length);
+    setIsPaused(true);
   };
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % posters.length);
+    setIsPaused(true);
   };
 
   return (
