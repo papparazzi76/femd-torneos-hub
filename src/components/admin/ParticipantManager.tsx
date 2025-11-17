@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Upload } from 'lucide-react';
 
 export const ParticipantManager = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -114,6 +114,65 @@ export const ParticipantManager = () => {
     setShowForm(false);
   };
 
+  const handleCSVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      // Skip header row
+      const dataLines = lines.slice(1);
+      
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const line of dataLines) {
+        // CSV format: team_name,name,position,number,photo_url,birth_date
+        const [teamName, name, position, number, photo_url, birth_date] = line.split(',').map(s => s.trim());
+        
+        if (!name) continue;
+
+        try {
+          // Find team by name
+          const team = teams.find(t => t.name.toLowerCase() === teamName?.toLowerCase());
+          
+          const participantData = {
+            team_id: team?.id,
+            name: name,
+            position: position || undefined,
+            number: number ? parseInt(number) : undefined,
+            photo_url: photo_url || undefined,
+            birth_date: birth_date || undefined
+          };
+
+          await participantService.create(participantData);
+          successCount++;
+        } catch (error) {
+          errorCount++;
+          console.error('Error importing participant:', name, error);
+        }
+      }
+
+      toast({
+        title: 'Importación completada',
+        description: `${successCount} participantes importados correctamente. ${errorCount > 0 ? `${errorCount} errores.` : ''}`
+      });
+
+      loadData();
+      
+      // Reset file input
+      e.target.value = '';
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudo procesar el archivo CSV',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const getTeamName = (teamId?: string) => {
     if (!teamId) return 'Sin equipo';
     return teams.find(t => t.id === teamId)?.name || 'Sin equipo';
@@ -127,10 +186,27 @@ export const ParticipantManager = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Gestión de Participantes</h2>
-        <Button onClick={() => setShowForm(!showForm)} className="bg-emerald-600 hover:bg-emerald-700">
-          {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-          {showForm ? 'Cancelar' : 'Nuevo Participante'}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => document.getElementById('csv-upload')?.click()}
+            className="border-emerald-600 text-emerald-600 hover:bg-emerald-50"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Importar CSV
+          </Button>
+          <input
+            id="csv-upload"
+            type="file"
+            accept=".csv"
+            onChange={handleCSVUpload}
+            className="hidden"
+          />
+          <Button onClick={() => setShowForm(!showForm)} className="bg-emerald-600 hover:bg-emerald-700">
+            {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+            {showForm ? 'Cancelar' : 'Nuevo Participante'}
+          </Button>
+        </div>
       </div>
 
       {showForm && (
