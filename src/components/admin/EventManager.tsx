@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Save, X, Calendar, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Calendar, Upload, Trophy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { TournamentManager } from './TournamentManager';
 
 export const EventManager = () => {
   const [events, setEvents] = useState<Event[]>([]);
@@ -17,6 +18,7 @@ export const EventManager = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [expandedTournament, setExpandedTournament] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -287,13 +289,21 @@ export const EventManager = () => {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-4">
         {events.map((event) => (
           <Card key={event.id}>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span className="truncate">{event.title}</span>
                 <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant={expandedTournament === event.id ? "default" : "outline"}
+                    onClick={() => setExpandedTournament(expandedTournament === event.id ? null : event.id)}
+                  >
+                    <Trophy className="w-4 h-4 mr-2" />
+                    Gestionar Torneo
+                  </Button>
                   <Button size="sm" variant="ghost" onClick={() => handleEdit(event)}>
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -303,19 +313,31 @@ export const EventManager = () => {
                 </div>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              {(event as any).poster_url && (
-                <img src={(event as any).poster_url} alt={event.title} className="w-full h-40 object-cover rounded" />
-              )}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Calendar className="w-4 h-4" />
-                {new Date(event.date).toLocaleDateString('es-ES')}
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  {(event as any).poster_url && (
+                    <img src={(event as any).poster_url} alt={event.title} className="w-full h-48 object-cover rounded" />
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="w-4 h-4" />
+                    {new Date(event.date).toLocaleDateString('es-ES')}
+                  </div>
+                  {event.location && (
+                    <p className="text-sm"><strong>Ubicación:</strong> {event.location}</p>
+                  )}
+                  {event.description && (
+                    <p className="text-sm text-muted-foreground">{event.description}</p>
+                  )}
+                </div>
               </div>
-              {event.location && (
-                <p className="text-sm"><strong>Ubicación:</strong> {event.location}</p>
-              )}
-              {event.description && (
-                <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
+              
+              {expandedTournament === event.id && (
+                <div className="border-t pt-4">
+                  <TournamentManager eventId={event.id} />
+                </div>
               )}
             </CardContent>
           </Card>

@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      event_teams: {
+        Row: {
+          created_at: string | null
+          draws: number | null
+          event_id: string
+          goal_difference: number | null
+          goals_against: number | null
+          goals_for: number | null
+          group_name: string | null
+          id: string
+          losses: number | null
+          matches_played: number | null
+          points: number | null
+          red_cards: number | null
+          team_id: string
+          wins: number | null
+          yellow_cards: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          draws?: number | null
+          event_id: string
+          goal_difference?: number | null
+          goals_against?: number | null
+          goals_for?: number | null
+          group_name?: string | null
+          id?: string
+          losses?: number | null
+          matches_played?: number | null
+          points?: number | null
+          red_cards?: number | null
+          team_id: string
+          wins?: number | null
+          yellow_cards?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          draws?: number | null
+          event_id?: string
+          goal_difference?: number | null
+          goals_against?: number | null
+          goals_for?: number | null
+          group_name?: string | null
+          id?: string
+          losses?: number | null
+          matches_played?: number | null
+          points?: number | null
+          red_cards?: number | null
+          team_id?: string
+          wins?: number | null
+          yellow_cards?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_teams_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_teams_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string | null
@@ -46,6 +115,85 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      matches: {
+        Row: {
+          away_red_cards: number | null
+          away_score: number | null
+          away_team_id: string
+          away_yellow_cards: number | null
+          created_at: string | null
+          event_id: string
+          group_name: string | null
+          home_red_cards: number | null
+          home_score: number | null
+          home_team_id: string
+          home_yellow_cards: number | null
+          id: string
+          match_date: string | null
+          match_number: number | null
+          phase: string
+          status: string | null
+        }
+        Insert: {
+          away_red_cards?: number | null
+          away_score?: number | null
+          away_team_id: string
+          away_yellow_cards?: number | null
+          created_at?: string | null
+          event_id: string
+          group_name?: string | null
+          home_red_cards?: number | null
+          home_score?: number | null
+          home_team_id: string
+          home_yellow_cards?: number | null
+          id?: string
+          match_date?: string | null
+          match_number?: number | null
+          phase: string
+          status?: string | null
+        }
+        Update: {
+          away_red_cards?: number | null
+          away_score?: number | null
+          away_team_id?: string
+          away_yellow_cards?: number | null
+          created_at?: string | null
+          event_id?: string
+          group_name?: string | null
+          home_red_cards?: number | null
+          home_score?: number | null
+          home_team_id?: string
+          home_yellow_cards?: number | null
+          id?: string
+          match_date?: string | null
+          match_number?: number | null
+          phase?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       participants: {
         Row: {
