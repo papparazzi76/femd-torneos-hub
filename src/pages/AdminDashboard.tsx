@@ -6,6 +6,7 @@ import { ParticipantManager } from '@/components/admin/ParticipantManager';
 import { EventManager } from '@/components/admin/EventManager';
 import { PostManager } from '@/components/admin/PostManager';
 import { SponsorManager } from '@/components/admin/SponsorManager';
+import { StorageManager } from '@/components/admin/StorageManager';
 import { Shield, AlertCircle } from 'lucide-react';
 
 export const AdminDashboard = () => {
@@ -71,12 +72,13 @@ export const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="teams" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto">
             <TabsTrigger value="teams">Equipos</TabsTrigger>
             <TabsTrigger value="participants">Participantes</TabsTrigger>
             <TabsTrigger value="events">Eventos</TabsTrigger>
             <TabsTrigger value="posts">Noticias</TabsTrigger>
             <TabsTrigger value="sponsors">Patrocinadores</TabsTrigger>
+            <TabsTrigger value="storage">Archivos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="teams" className="space-y-4">
@@ -97,6 +99,10 @@ export const AdminDashboard = () => {
 
           <TabsContent value="sponsors" className="space-y-4">
             <SponsorManager />
+          </TabsContent>
+
+          <TabsContent value="storage" className="space-y-4">
+            <StorageManager />
           </TabsContent>
         </Tabs>
       </div>
