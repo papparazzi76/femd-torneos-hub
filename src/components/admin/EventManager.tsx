@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Save, X, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Calendar, Upload } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 export const EventManager = () => {
   const [events, setEvents] = useState<Event[]>([]);
@@ -15,11 +16,13 @@ export const EventManager = () => {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     date: '',
-    location: ''
+    location: '',
+    poster_url: ''
   });
   const { toast } = useToast();
 
@@ -54,6 +57,7 @@ export const EventManager = () => {
         description: formData.description.trim() || undefined,
         date: formData.date,
         location: formData.location.trim() || undefined,
+        poster_url: formData.poster_url.trim() || undefined,
         team_ids: []
       };
 
@@ -81,7 +85,8 @@ export const EventManager = () => {
       title: event.title,
       description: event.description || '',
       date: event.date.split('T')[0],
-      location: event.location || ''
+      location: event.location || '',
+      poster_url: (event as any).poster_url || ''
     });
     setEditingId(event.id);
     setShowForm(true);
@@ -103,8 +108,65 @@ export const EventManager = () => {
     }
   };
 
+  const handlePosterUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Error',
+        description: 'Por favor selecciona un archivo de imagen',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'Error',
+        description: 'La imagen no puede superar los 5MB',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('carteles')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('carteles')
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, poster_url: publicUrl });
+      
+      toast({
+        title: 'Cartel subido',
+        description: 'El cartel se ha subido correctamente'
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudo subir el cartel',
+        variant: 'destructive'
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const resetForm = () => {
-    setFormData({ title: '', description: '', date: '', location: '' });
+    setFormData({ title: '', description: '', date: '', location: '', poster_url: '' });
     setEditingId(null);
     setShowForm(false);
   };
@@ -169,6 +231,48 @@ export const EventManager = () => {
                   />
                 </div>
               </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Cartel del Evento</label>
+                <div className="space-y-2">
+                  {formData.poster_url && (
+                    <div className="flex items-center gap-2">
+                      <img src={formData.poster_url} alt="Cartel preview" className="w-24 h-32 object-cover border rounded" />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFormData({ ...formData, poster_url: '' })}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePosterUpload}
+                      disabled={uploading}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={uploading}
+                      onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {uploading ? 'Subiendo...' : 'Subir'}
+                    </Button>
+                  </div>
+                  <Input
+                    value={formData.poster_url}
+                    onChange={(e) => setFormData({ ...formData, poster_url: e.target.value })}
+                    placeholder="O pega la URL directamente"
+                    type="url"
+                  />
+                </div>
+              </div>
               <div className="flex gap-2">
                 <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
                   <Save className="w-4 h-4 mr-2" />
@@ -200,6 +304,9 @@ export const EventManager = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
+              {(event as any).poster_url && (
+                <img src={(event as any).poster_url} alt={event.title} className="w-full h-40 object-cover rounded" />
+              )}
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="w-4 h-4" />
                 {new Date(event.date).toLocaleDateString('es-ES')}
