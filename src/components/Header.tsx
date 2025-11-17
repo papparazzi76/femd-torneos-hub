@@ -6,6 +6,8 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "./ThemeToggle";
 import { roleService } from "@/services/roleService";
+import logoBlanco from "@/assets/logo-web.png";
+import logoNegro from "@/assets/logo-web-negro.png";
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -62,13 +64,12 @@ export function Header() {
           <div className="flex items-center justify-between h-20">
             {/* Logo */}
           <div className="flex items-center space-x-2">
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="w-12 h-12 gradient-emerald rounded-lg flex items-center justify-center">
-                <span className="text-2xl font-bold text-white">F</span>
-              </div>
-              <span className="text-xl font-bold text-foreground">
-                FEMD TORNEOS
-              </span>
+            <Link to="/" className="flex items-center space-x-3">
+              <img 
+                src={theme === "dark" ? logoBlanco : logoNegro} 
+                alt="FEMD Torneos" 
+                className="h-12 w-auto"
+              />
             </Link>
           </div>
 

@@ -1,6 +1,10 @@
 import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
+import logoBlanco from "@/assets/logo-web.png";
+import logoNegro from "@/assets/logo-web-negro.png";
 
 export function Footer() {
+  const { theme } = useTheme();
   const currentYear = new Date().getFullYear();
 
   return (
@@ -10,12 +14,11 @@ export function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 gradient-emerald rounded-lg flex items-center justify-center">
-                <span className="text-xl font-bold text-white">F</span>
-              </div>
-              <span className="text-lg font-bold text-foreground">
-                FEMD TORNEOS
-              </span>
+              <img 
+                src={theme === "dark" ? logoBlanco : logoNegro} 
+                alt="FEMD Torneos" 
+                className="h-10 w-auto"
+              />
             </div>
             <p className="text-sm text-muted-foreground">
               Organizadores de eventos y torneos de fútbol profesionales.
