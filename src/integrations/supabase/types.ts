@@ -14,7 +14,167 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      events: {
+        Row: {
+          created_at: string | null
+          date: string
+          description: string | null
+          id: string
+          location: string | null
+          team_ids: string[] | null
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          team_ids?: string[] | null
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          team_ids?: string[] | null
+          title?: string
+        }
+        Relationships: []
+      }
+      participants: {
+        Row: {
+          birth_date: string | null
+          created_at: string | null
+          id: string
+          name: string
+          number: number | null
+          photo_url: string | null
+          position: string | null
+          team_id: string | null
+        }
+        Insert: {
+          birth_date?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          number?: number | null
+          photo_url?: string | null
+          position?: string | null
+          team_id?: string | null
+        }
+        Update: {
+          birth_date?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          number?: number | null
+          photo_url?: string | null
+          position?: string | null
+          team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participants_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          author_id: string | null
+          content: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          author_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      sponsors: {
+        Row: {
+          created_at: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          tier: string | null
+          website: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          tier?: string | null
+          website?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          tier?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      teams: {
+        Row: {
+          colors: string | null
+          created_at: string | null
+          description: string | null
+          founded_year: number | null
+          id: string
+          logo_url: string | null
+          name: string
+        }
+        Insert: {
+          colors?: string | null
+          created_at?: string | null
+          description?: string | null
+          founded_year?: number | null
+          id?: string
+          logo_url?: string | null
+          name: string
+        }
+        Update: {
+          colors?: string | null
+          created_at?: string | null
+          description?: string | null
+          founded_year?: number | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
