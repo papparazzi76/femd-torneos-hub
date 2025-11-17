@@ -25,7 +25,7 @@ export function Header() {
   const navLinks = [
     { name: "Inicio", href: "#home", isAnchor: true },
     { name: "Equipos", href: "/equipos", isRoute: true },
-    { name: "Calendario", href: "#calendar", isAnchor: true },
+    { name: "Torneos", href: "/torneos", isRoute: true },
     { name: "Noticias", href: "/noticias", isRoute: true },
     { name: "Patrocinadores", href: "/patrocinadores", isRoute: true },
     { name: "Contacto", href: "/contacto", isRoute: true },
