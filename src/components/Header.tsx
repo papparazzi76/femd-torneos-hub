@@ -26,7 +26,7 @@ export function Header() {
     { name: "Inicio", href: "#home", isAnchor: true },
     { name: "Equipos", href: "/equipos", isRoute: true },
     { name: "Calendario", href: "#calendar", isAnchor: true },
-    { name: "Noticias", href: "#news", isAnchor: true },
+    { name: "Noticias", href: "/noticias", isRoute: true },
     { name: "Contacto", href: "#contact", isAnchor: true },
   ];
 
