@@ -1,34 +1,13 @@
-import { useState, useRef, useEffect } from "react";
 import { Play, Pause, Volume2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
+import { useAudio } from "@/contexts/AudioContext";
 
 export function AudioPlayer() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState([70]);
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume[0] / 100;
-    }
-  }, [volume]);
-
-  const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
+  const { isPlaying, volume, togglePlay, setVolume } = useAudio();
 
   return (
     <div className="flex items-center gap-3 justify-center mt-6 mb-4">
-      <audio ref={audioRef} src="/audio/banda-sonora.mp3" loop />
-      
       <Button
         onClick={togglePlay}
         size="icon"

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Users, Trophy } from "lucide-react";
@@ -76,46 +77,47 @@ export function TournamentsPage() {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {upcomingEvents.map((event, index) => (
-                <Card
-                  key={event.id}
-                  className="hover-lift hover-glow animate-fade-in overflow-hidden"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <div className="h-2 gradient-emerald" />
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <CardTitle className="text-xl">{event.title}</CardTitle>
-                      <Badge className="shrink-0">Próximamente</Badge>
-                    </div>
-                    {event.description && (
-                      <CardDescription className="line-clamp-2">
-                        {event.description}
-                      </CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4 text-primary" />
-                      <span>
-                        {format(new Date(event.date), "d 'de' MMMM, yyyy", {
-                          locale: es,
-                        })}
-                      </span>
-                    </div>
-                    {event.location && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4 text-primary" />
-                        <span>{event.location}</span>
+                <Link key={event.id} to={`/torneos/${event.id}`}>
+                  <Card
+                    className="hover-lift hover-glow animate-fade-in overflow-hidden cursor-pointer"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className="h-2 gradient-emerald" />
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <CardTitle className="text-xl">{event.title}</CardTitle>
+                        <Badge className="shrink-0">Próximamente</Badge>
                       </div>
-                    )}
-                    {event.team_ids && event.team_ids.length > 0 && (
+                      {event.description && (
+                        <CardDescription className="line-clamp-2">
+                          {event.description}
+                        </CardDescription>
+                      )}
+                    </CardHeader>
+                    <CardContent className="space-y-3">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Users className="h-4 w-4 text-primary" />
-                        <span>{event.team_ids.length} equipos inscritos</span>
+                        <Calendar className="h-4 w-4 text-primary" />
+                        <span>
+                          {format(new Date(event.date), "d 'de' MMMM, yyyy", {
+                            locale: es,
+                          })}
+                        </span>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      {event.location && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4 text-primary" />
+                          <span>{event.location}</span>
+                        </div>
+                      )}
+                      {event.team_ids && event.team_ids.length > 0 && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Users className="h-4 w-4 text-primary" />
+                          <span>{event.team_ids.length} equipos inscritos</span>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           </section>
@@ -136,45 +138,46 @@ export function TournamentsPage() {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {pastEvents.map((event, index) => (
-                <Card
-                  key={event.id}
-                  className="hover-lift animate-fade-in opacity-80 hover:opacity-100 transition-opacity"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <CardTitle className="text-xl">{event.title}</CardTitle>
-                      <Badge variant="outline">Finalizado</Badge>
-                    </div>
-                    {event.description && (
-                      <CardDescription className="line-clamp-2">
-                        {event.description}
-                      </CardDescription>
-                    )}
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        {format(new Date(event.date), "d 'de' MMMM, yyyy", {
-                          locale: es,
-                        })}
-                      </span>
-                    </div>
-                    {event.location && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4" />
-                        <span>{event.location}</span>
+                <Link key={event.id} to={`/torneos/${event.id}`}>
+                  <Card
+                    className="hover-lift animate-fade-in opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <CardTitle className="text-xl">{event.title}</CardTitle>
+                        <Badge variant="outline">Finalizado</Badge>
                       </div>
-                    )}
-                    {event.team_ids && event.team_ids.length > 0 && (
+                      {event.description && (
+                        <CardDescription className="line-clamp-2">
+                          {event.description}
+                        </CardDescription>
+                      )}
+                    </CardHeader>
+                    <CardContent className="space-y-3">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Users className="h-4 w-4" />
-                        <span>{event.team_ids.length} equipos participaron</span>
+                        <Calendar className="h-4 w-4" />
+                        <span>
+                          {format(new Date(event.date), "d 'de' MMMM, yyyy", {
+                            locale: es,
+                          })}
+                        </span>
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      {event.location && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          <span>{event.location}</span>
+                        </div>
+                      )}
+                      {event.team_ids && event.team_ids.length > 0 && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Users className="h-4 w-4" />
+                          <span>{event.team_ids.length} equipos participaron</span>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
             </div>
           </section>
