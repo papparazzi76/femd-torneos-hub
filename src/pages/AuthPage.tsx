@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { roleService } from "@/services/roleService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,11 +26,29 @@ export const AuthPage = () => {
   const [signUpName, setSignUpName] = useState("");
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
 
-  // Redirect if already logged in
+  // Redirect if already logged in - check role and redirect accordingly
   useEffect(() => {
-    if (user) {
-      navigate("/");
-    }
+    const checkRoleAndRedirect = async () => {
+      if (user) {
+        try {
+          const roles = await roleService.getUserRoles(user.id);
+          
+          // Redirect based on role
+          if (roles.includes('admin')) {
+            navigate("/admin");
+          } else if (roles.includes('mesa')) {
+            navigate("/mesa");
+          } else {
+            navigate("/");
+          }
+        } catch (error) {
+          console.error('Error checking roles:', error);
+          navigate("/");
+        }
+      }
+    };
+    
+    checkRoleAndRedirect();
   }, [user, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -50,7 +69,7 @@ export const AuthPage = () => {
           title: "¡Bienvenido!",
           description: "Has iniciado sesión correctamente",
         });
-        navigate("/");
+        // The useEffect will handle the redirect based on role
       }
     } catch (error) {
       toast({
