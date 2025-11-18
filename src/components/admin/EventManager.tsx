@@ -6,10 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Save, X, Calendar, Upload, Trophy } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Calendar, Upload, Trophy, History as HistoryIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { TournamentManager } from './TournamentManager';
+import { HistoricalTournamentManager } from './HistoricalTournamentManager';
 
 export const EventManager = () => {
   const [events, setEvents] = useState<Event[]>([]);
@@ -19,6 +21,7 @@ export const EventManager = () => {
   const [showForm, setShowForm] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [expandedTournament, setExpandedTournament] = useState<string | null>(null);
+  const [tournamentMode, setTournamentMode] = useState<'automatic' | 'historical'>('automatic');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -336,7 +339,26 @@ export const EventManager = () => {
               
               {expandedTournament === event.id && (
                 <div className="border-t pt-4">
-                  <TournamentManager eventId={event.id} />
+                  <Tabs value={tournamentMode} onValueChange={(v: any) => setTournamentMode(v)}>
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="automatic">
+                        <Trophy className="w-4 h-4 mr-2" />
+                        Torneo Automático
+                      </TabsTrigger>
+                      <TabsTrigger value="historical">
+                        <HistoryIcon className="w-4 h-4 mr-2" />
+                        Entrada Manual
+                      </TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="automatic" className="mt-4">
+                      <TournamentManager eventId={event.id} />
+                    </TabsContent>
+                    
+                    <TabsContent value="historical" className="mt-4">
+                      <HistoricalTournamentManager eventId={event.id} />
+                    </TabsContent>
+                  </Tabs>
                 </div>
               )}
             </CardContent>
