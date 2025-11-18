@@ -7,6 +7,7 @@ import { EventManager } from '@/components/admin/EventManager';
 import { PostManager } from '@/components/admin/PostManager';
 import { SponsorManager } from '@/components/admin/SponsorManager';
 import { StorageManager } from '@/components/admin/StorageManager';
+import { UserManager } from '@/components/admin/UserManager';
 import { Shield, AlertCircle } from 'lucide-react';
 import { roleService } from '@/services/roleService';
 import { useToast } from '@/hooks/use-toast';
@@ -98,12 +99,13 @@ export const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="teams" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto">
+          <TabsList className="grid w-full grid-cols-7 lg:w-auto">
             <TabsTrigger value="teams">Equipos</TabsTrigger>
             <TabsTrigger value="participants">Participantes</TabsTrigger>
             <TabsTrigger value="events">Torneos</TabsTrigger>
             <TabsTrigger value="posts">Noticias</TabsTrigger>
             <TabsTrigger value="sponsors">Patrocinadores</TabsTrigger>
+            <TabsTrigger value="users">Usuarios</TabsTrigger>
             <TabsTrigger value="storage">Archivos</TabsTrigger>
           </TabsList>
 
@@ -125,6 +127,10 @@ export const AdminDashboard = () => {
 
           <TabsContent value="sponsors" className="space-y-4">
             <SponsorManager />
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-4">
+            <UserManager />
           </TabsContent>
 
           <TabsContent value="storage" className="space-y-4">
