@@ -3,14 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { tournamentService } from '@/services/tournamentService';
 import { teamService } from '@/services/teamService';
 import { Team } from '@/types/database';
 import { EventTeam, Match } from '@/types/tournament';
-import { Trophy, Users, Calendar, Trash2 } from 'lucide-react';
+import { Trophy, Users, Calendar, Trash2, UserCog } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { RefereeManager } from './RefereeManager';
 
 interface TournamentManagerProps {
   eventId: string;
@@ -214,6 +216,23 @@ export const TournamentManager = ({ eventId }: TournamentManagerProps) => {
 
   return (
     <div className="space-y-6">
+      <Tabs defaultValue="equipos" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="equipos">
+            <Users className="w-4 h-4 mr-2" />
+            Equipos
+          </TabsTrigger>
+          <TabsTrigger value="calendario">
+            <Calendar className="w-4 h-4 mr-2" />
+            Calendario
+          </TabsTrigger>
+          <TabsTrigger value="mesas">
+            <UserCog className="w-4 h-4 mr-2" />
+            Mesas
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="equipos" className="mt-6 space-y-6">
       <div className="flex gap-4">
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -317,7 +336,9 @@ export const TournamentManager = ({ eventId }: TournamentManagerProps) => {
           </div>
         </Card>
       )}
+        </TabsContent>
 
+        <TabsContent value="calendario" className="mt-6">
       {/* Calendario de partidos */}
       {matches.length > 0 && (
         <Card className="p-6">
@@ -382,6 +403,12 @@ export const TournamentManager = ({ eventId }: TournamentManagerProps) => {
           </div>
         </Card>
       )}
+        </TabsContent>
+
+        <TabsContent value="mesas" className="mt-6">
+          <RefereeManager eventId={eventId} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

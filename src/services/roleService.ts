@@ -50,4 +50,45 @@ export const roleService = {
       return [];
     }
   },
+
+  async getUsersByRole(role: 'admin' | 'moderator' | 'user' | 'mesa'): Promise<Array<{ id: string; email: string }>> {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', role);
+
+      if (error) {
+        console.error('Error fetching users by role:', error);
+        return [];
+      }
+
+      if (!data || data.length === 0) return [];
+
+      // Since we can't query auth.users directly, return user_ids
+      // Email will need to be fetched separately or displayed as user ID
+      return data.map(r => ({ id: r.user_id, email: r.user_id }));
+    } catch (error) {
+      console.error('Unexpected error fetching users by role:', error);
+      return [];
+    }
+  },
+
+  async assignRole(userId: string, role: 'admin' | 'moderator' | 'user' | 'mesa'): Promise<void> {
+    const { error } = await supabase
+      .from('user_roles')
+      .insert([{ user_id: userId, role }]);
+    
+    if (error) throw error;
+  },
+
+  async removeRole(userId: string, role: 'admin' | 'moderator' | 'user' | 'mesa'): Promise<void> {
+    const { error } = await supabase
+      .from('user_roles')
+      .delete()
+      .eq('user_id', userId)
+      .eq('role', role);
+    
+    if (error) throw error;
+  },
 };
