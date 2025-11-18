@@ -7,6 +7,7 @@ import { postService } from "@/services/postService";
 import { Sponsor, Post } from "@/types/database";
 import { TournamentCarousel } from "@/components/TournamentCarousel";
 import { PosterGallery3D } from "@/components/PosterGallery3D";
+import { AudioPlayer } from "@/components/AudioPlayer";
 
 export function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -106,10 +107,13 @@ export function HomePage() {
           <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-slide-up">
             FEMD TORNEOS
           </h1>
-          <p className="text-xl md:text-2xl mb-8 text-gray-200 max-w-2xl mx-auto animate-slide-up">
+          <p className="text-xl md:text-2xl mb-4 text-gray-200 max-w-2xl mx-auto animate-slide-up">
             Organizadores profesionales de eventos y torneos de fútbol
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-scale-in">
+          
+          <AudioPlayer />
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-scale-in mt-4">
             <Button size="lg" className="gradient-emerald text-white hover:opacity-90" asChild>
               <a href="/torneos">Ver Torneos</a>
             </Button>
