@@ -106,6 +106,15 @@ export const tournamentService = {
     if (error) throw error;
   },
 
+  async deleteMatch(matchId: string): Promise<void> {
+    const { error } = await supabase
+      .from('matches')
+      .delete()
+      .eq('id', matchId);
+    
+    if (error) throw error;
+  },
+
   // Tournament Generation
   async generateTournament(eventId: string, teamIds: string[]): Promise<void> {
     if (teamIds.length !== 24) {
