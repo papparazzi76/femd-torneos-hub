@@ -136,6 +136,7 @@ export const TournamentManager = ({ eventId }: TournamentManagerProps) => {
     try {
       const numValue = parseInt(value) || 0;
       await tournamentService.updateMatch(matchId, { [field]: numValue });
+      await tournamentService.updateTeamStatistics(eventId);
       await loadData();
     } catch (error) {
       console.error('Error actualizando partido:', error);
@@ -144,6 +145,31 @@ export const TournamentManager = ({ eventId }: TournamentManagerProps) => {
         description: 'No se pudo actualizar el partido',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleGenerateKnockout = async () => {
+    if (!confirm('¿Generar fase eliminatoria? Se crearán los 1/8 de final con los 2 primeros de cada grupo.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await tournamentService.generateKnockoutPhase(eventId);
+      toast({
+        title: 'Fase eliminatoria generada',
+        description: 'Los 1/8 de final se crearon exitosamente',
+      });
+      await loadData();
+    } catch (error) {
+      console.error('Error generando fase eliminatoria:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo generar la fase eliminatoria',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -161,6 +187,19 @@ export const TournamentManager = ({ eventId }: TournamentManagerProps) => {
     acc[group].push(et);
     return acc;
   }, {} as Record<string, EventTeam[]>);
+
+  // Sort teams in each group by standings
+  Object.keys(groupedTeams).forEach(group => {
+    groupedTeams[group].sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      if (b.goal_difference !== a.goal_difference) return b.goal_difference - a.goal_difference;
+      if (b.goals_for !== a.goals_for) return b.goals_for - a.goals_for;
+      if (a.goals_against !== b.goals_against) return a.goals_against - b.goals_against;
+      if (a.red_cards !== b.red_cards) return a.red_cards - b.red_cards;
+      if (a.yellow_cards !== b.yellow_cards) return a.yellow_cards - b.yellow_cards;
+      return 0;
+    });
+  });
 
   const groupedMatches = matches.reduce((acc, match) => {
     const key = match.phase + (match.group_name ? `_${match.group_name}` : '');
@@ -220,6 +259,15 @@ export const TournamentManager = ({ eventId }: TournamentManagerProps) => {
           <Calendar className="w-4 h-4 mr-2" />
           Generar Sorteo y Calendario
         </Button>
+
+        <Button
+          onClick={handleGenerateKnockout}
+          disabled={matches.filter(m => m.phase === 'group').length === 0 || loading}
+          variant="secondary"
+        >
+          <Trophy className="w-4 h-4 mr-2" />
+          Generar Fase Eliminatoria
+        </Button>
       </div>
 
       {/* Equipos por grupo */}
@@ -232,13 +280,37 @@ export const TournamentManager = ({ eventId }: TournamentManagerProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(groupedTeams).sort().map(([group, teams]) => (
               <Card key={group} className="p-4">
-                <h4 className="font-bold mb-2">Grupo {group}</h4>
-                <div className="space-y-1">
-                  {teams.map(et => (
-                    <div key={et.id} className="text-sm">
-                      {getTeamName(et.team_id)}
-                    </div>
-                  ))}
+                <h4 className="font-bold mb-3 text-center">Grupo {group}</h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left py-1">Pos</th>
+                        <th className="text-left py-1">Equipo</th>
+                        <th className="text-center py-1">PJ</th>
+                        <th className="text-center py-1">Pts</th>
+                        <th className="text-center py-1">GF</th>
+                        <th className="text-center py-1">GC</th>
+                        <th className="text-center py-1">DG</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {teams.map((et, index) => (
+                        <tr 
+                          key={et.id} 
+                          className={`border-b ${index < 2 ? 'bg-green-500/10' : ''}`}
+                        >
+                          <td className="py-1 font-semibold">{index + 1}</td>
+                          <td className="py-1">{getTeamName(et.team_id)}</td>
+                          <td className="text-center py-1">{et.matches_played}</td>
+                          <td className="text-center py-1 font-bold">{et.points}</td>
+                          <td className="text-center py-1">{et.goals_for}</td>
+                          <td className="text-center py-1">{et.goals_against}</td>
+                          <td className="text-center py-1">{et.goal_difference}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </Card>
             ))}
