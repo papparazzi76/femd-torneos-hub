@@ -32,5 +32,6 @@ export interface Match {
   away_red_cards: number;
   match_date?: string;
   status: 'scheduled' | 'in_progress' | 'finished';
+  referee_user_id?: string;
   created_at: string;
 }

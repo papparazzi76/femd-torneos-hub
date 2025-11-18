@@ -133,6 +133,7 @@ export type Database = {
           match_date: string | null
           match_number: number | null
           phase: string
+          referee_user_id: string | null
           status: string | null
         }
         Insert: {
@@ -151,6 +152,7 @@ export type Database = {
           match_date?: string | null
           match_number?: number | null
           phase: string
+          referee_user_id?: string | null
           status?: string | null
         }
         Update: {
@@ -169,6 +171,7 @@ export type Database = {
           match_date?: string | null
           match_number?: number | null
           phase?: string
+          referee_user_id?: string | null
           status?: string | null
         }
         Relationships: [

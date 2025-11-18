@@ -79,6 +79,24 @@ export const tournamentService = {
     if (error) throw error;
   },
 
+  async assignReferee(matchId: string, refereeUserId: string): Promise<void> {
+    const { error } = await supabase
+      .from('matches')
+      .update({ referee_user_id: refereeUserId })
+      .eq('id', matchId);
+    
+    if (error) throw error;
+  },
+
+  async unassignReferee(matchId: string): Promise<void> {
+    const { error } = await supabase
+      .from('matches')
+      .update({ referee_user_id: null })
+      .eq('id', matchId);
+    
+    if (error) throw error;
+  },
+
   async deleteMatches(eventId: string): Promise<void> {
     const { error } = await supabase
       .from('matches')
