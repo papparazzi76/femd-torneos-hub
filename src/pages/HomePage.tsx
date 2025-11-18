@@ -52,10 +52,9 @@ export function HomePage() {
   }, []);
 
   const stats = [
-    { icon: Trophy, value: "50+", label: "Torneos Organizados" },
-    { icon: Users, value: "1000+", label: "Equipos Participantes" },
-    { icon: Calendar, value: "200+", label: "Eventos Anuales" },
-    { icon: TrendingUp, value: "15k+", label: "Jugadores Activos" },
+    { icon: Trophy, value: "15+", label: "Torneos Organizados" },
+    { icon: Users, value: "150+", label: "Equipos Participantes" },
+    { icon: TrendingUp, value: "1.2k+", label: "Jugadores Activos" },
   ];
 
   const features = [
