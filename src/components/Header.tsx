@@ -139,8 +139,8 @@ export function Header() {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden fixed inset-0 top-20 bg-background z-40 animate-fade-in">
-            <nav className="flex flex-col p-6 space-y-6">
+          <div className="md:hidden fixed inset-0 top-20 bg-background z-40 animate-fade-in opacity-100">
+            <nav className="flex flex-col p-6 space-y-6 bg-background">
               {navLinks.map((link) => (
                 link.isRoute ? (
                   <Link
