@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -6,12 +6,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { tournamentService } from '@/services/tournamentService';
 import { teamService } from '@/services/teamService';
 import { Team } from '@/types/database';
 import { EventTeam, Match } from '@/types/tournament';
-import { History, Plus, Save, Trash2, Edit2, Calendar } from 'lucide-react';
+import { History, Plus, Save, Trash2, Edit2, Calendar, Download, Upload, FileText } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { 
+  exportMatchesToCSV, 
+  exportTeamsToCSV, 
+  parseMatchesCSV, 
+  parseTeamsCSV,
+  downloadCSV,
+  getCSVTemplate,
+  type MatchCSVRow,
+  type TeamCSVRow
+} from '@/utils/tournamentCsvUtils';
 
 interface HistoricalTournamentManagerProps {
   eventId: string;
@@ -26,6 +37,11 @@ export const HistoricalTournamentManager = ({ eventId }: HistoricalTournamentMan
   // Team selection dialog
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
+  
+  // CSV Import/Export
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importType, setImportType] = useState<'teams' | 'matches'>('matches');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Match creation dialog
   const [matchDialogOpen, setMatchDialogOpen] = useState(false);
@@ -257,6 +273,185 @@ export const HistoricalTournamentManager = ({ eventId }: HistoricalTournamentMan
     }
   };
 
+  // CSV Export Functions
+  const handleExportMatches = () => {
+    const csv = exportMatchesToCSV(matches, getTeamName);
+    downloadCSV(csv, `partidos-${eventId}-${new Date().toISOString().split('T')[0]}.csv`);
+    toast({
+      title: 'Exportación exitosa',
+      description: 'Los partidos se exportaron correctamente',
+    });
+  };
+
+  const handleExportTeams = () => {
+    const teamsData = eventTeams.map(et => ({
+      name: getTeamName(et.team_id),
+      group: et.group_name,
+    }));
+    const csv = exportTeamsToCSV(teamsData);
+    downloadCSV(csv, `equipos-${eventId}-${new Date().toISOString().split('T')[0]}.csv`);
+    toast({
+      title: 'Exportación exitosa',
+      description: 'Los equipos se exportaron correctamente',
+    });
+  };
+
+  const handleDownloadTemplate = (type: 'teams' | 'matches') => {
+    const csv = getCSVTemplate(type);
+    downloadCSV(csv, `plantilla-${type === 'teams' ? 'equipos' : 'partidos'}.csv`);
+    toast({
+      title: 'Plantilla descargada',
+      description: 'Usa esta plantilla como referencia para importar datos',
+    });
+  };
+
+  // CSV Import Functions
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.csv')) {
+      toast({
+        title: 'Formato inválido',
+        description: 'Solo se permiten archivos CSV',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const text = await file.text();
+
+      if (importType === 'matches') {
+        await importMatches(text);
+      } else {
+        await importTeams(text);
+      }
+
+      setImportDialogOpen(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Error importando archivo:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'No se pudo importar el archivo',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const importTeams = async (csvContent: string) => {
+    const teamRows = await parseTeamsCSV(csvContent);
+
+    if (teamRows.length === 0) {
+      throw new Error('El archivo no contiene equipos válidos');
+    }
+
+    // Find teams by name and add them to the event
+    const teamIds: string[] = [];
+    const notFound: string[] = [];
+
+    for (const row of teamRows) {
+      const team = teams.find(t => t.name.toLowerCase() === row.name.toLowerCase());
+      if (team) {
+        teamIds.push(team.id);
+      } else {
+        notFound.push(row.name);
+      }
+    }
+
+    if (notFound.length > 0) {
+      toast({
+        title: 'Advertencia',
+        description: `No se encontraron estos equipos: ${notFound.join(', ')}. Créalos primero en la gestión de equipos.`,
+        variant: 'destructive',
+      });
+    }
+
+    if (teamIds.length > 0) {
+      await tournamentService.addTeamsToEvent(eventId, teamIds);
+      toast({
+        title: 'Equipos importados',
+        description: `Se importaron ${teamIds.length} equipos correctamente`,
+      });
+      loadData();
+    }
+  };
+
+  const importMatches = async (csvContent: string) => {
+    const matchRows = await parseMatchesCSV(csvContent);
+
+    if (matchRows.length === 0) {
+      throw new Error('El archivo no contiene partidos válidos');
+    }
+
+    let imported = 0;
+    let errors = 0;
+
+    for (const row of matchRows) {
+      try {
+        // Find teams by name
+        const homeTeam = teams.find(t => t.name.toLowerCase() === row.home_team_name.toLowerCase());
+        const awayTeam = teams.find(t => t.name.toLowerCase() === row.away_team_name.toLowerCase());
+
+        if (!homeTeam || !awayTeam) {
+          console.error(`Equipos no encontrados: ${row.home_team_name} vs ${row.away_team_name}`);
+          errors++;
+          continue;
+        }
+
+        // Parse date if provided
+        let matchDate: string | undefined;
+        if (row.match_date) {
+          const parts = row.match_date.split('/');
+          if (parts.length === 3) {
+            matchDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+          }
+        }
+
+        const newMatch = {
+          event_id: eventId,
+          home_team_id: homeTeam.id,
+          away_team_id: awayTeam.id,
+          phase: row.phase as 'group' | 'round_of_16' | 'quarter_final' | 'semi_final' | 'final',
+          group_name: row.group_name || undefined,
+          match_date: matchDate,
+          home_score: row.home_score,
+          away_score: row.away_score,
+          home_yellow_cards: row.home_yellow_cards,
+          home_red_cards: row.home_red_cards,
+          away_yellow_cards: row.away_yellow_cards,
+          away_red_cards: row.away_red_cards,
+          status: 'finished' as const,
+        };
+
+        await tournamentService.createMatch(newMatch);
+        imported++;
+      } catch (error) {
+        console.error('Error importando partido:', error);
+        errors++;
+      }
+    }
+
+    if (imported > 0) {
+      await tournamentService.updateTeamStatistics(eventId);
+    }
+
+    toast({
+      title: 'Importación completada',
+      description: `${imported} partidos importados, ${errors} errores`,
+      variant: errors > 0 ? 'destructive' : 'default',
+    });
+
+    loadData();
+  };
+
   const getTeamName = (teamId: string) => {
     return teams.find(t => t.id === teamId)?.name || 'Desconocido';
   };
@@ -274,9 +469,95 @@ export const HistoricalTournamentManager = ({ eventId }: HistoricalTournamentMan
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 mb-4">
-        <History className="w-6 h-6 text-primary" />
-        <h3 className="text-2xl font-bold">Gestión Manual de Torneo Histórico</h3>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <History className="w-6 h-6 text-primary" />
+          <h3 className="text-2xl font-bold">Gestión Manual de Torneo Histórico</h3>
+        </div>
+        
+        {/* Import/Export Buttons */}
+        <div className="flex gap-2">
+          <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Upload className="w-4 h-4 mr-2" />
+                Importar CSV
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Importar Datos desde CSV</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Alert>
+                  <FileText className="w-4 h-4" />
+                  <AlertDescription>
+                    Descarga una plantilla CSV para ver el formato correcto antes de importar tus datos.
+                  </AlertDescription>
+                </Alert>
+
+                <div>
+                  <Label htmlFor="import-type">Tipo de datos</Label>
+                  <Select value={importType} onValueChange={(v: any) => setImportType(v)}>
+                    <SelectTrigger id="import-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="teams">Equipos</SelectItem>
+                      <SelectItem value="matches">Partidos</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => handleDownloadTemplate(importType)}
+                    className="flex-1"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Descargar Plantilla
+                  </Button>
+                </div>
+
+                <div className="border-t pt-4">
+                  <Label htmlFor="csv-file">Seleccionar archivo CSV</Label>
+                  <Input
+                    id="csv-file"
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileSelect}
+                    disabled={loading}
+                    className="mt-2"
+                  />
+                </div>
+
+                {loading && (
+                  <p className="text-sm text-muted-foreground">Importando datos...</p>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Button
+            variant="outline"
+            onClick={handleExportTeams}
+            disabled={eventTeams.length === 0}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Exportar Equipos
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={handleExportMatches}
+            disabled={matches.length === 0}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Exportar Partidos
+          </Button>
+        </div>
       </div>
 
       {/* Teams Section */}
