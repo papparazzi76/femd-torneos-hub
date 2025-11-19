@@ -3,14 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { teamService } from '@/services/teamService';
 import { participantService } from '@/services/participantService';
 import { eventService } from '@/services/eventService';
+import { supabase } from '@/integrations/supabase/client';
 import { Team, Participant, Event } from '@/types/database';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Users, Trophy, Calendar, Palette, Loader2 } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, Calendar, Palette, Loader2, Image, TrendingUp, Target, Shield } from 'lucide-react';
 
 export const TeamDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +20,7 @@ export const TeamDetailPage = () => {
   const [team, setTeam] = useState<Team | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,6 +45,20 @@ export const TeamDetailPage = () => {
         event.team_ids?.includes(id)
       );
       setEvents(teamEvents);
+
+      // Load matches for this team
+      const { data: matchesData } = await supabase
+        .from('matches')
+        .select(`
+          *,
+          home_team:teams!matches_home_team_id_fkey(id, name, logo_url),
+          away_team:teams!matches_away_team_id_fkey(id, name, logo_url),
+          event:events(id, title)
+        `)
+        .or(`home_team_id.eq.${id},away_team_id.eq.${id}`)
+        .order('match_date', { ascending: false });
+
+      setMatches(matchesData || []);
     } catch (error) {
       toast({
         title: 'Error',
@@ -139,16 +155,24 @@ export const TeamDetailPage = () => {
           </CardHeader>
         </Card>
 
-        {/* Tabs */}
+        {/* Tabs for different sections */}
         <Tabs defaultValue="plantilla" className="w-full">
-          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto mb-8">
             <TabsTrigger value="plantilla" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Plantilla
             </TabsTrigger>
-            <TabsTrigger value="competiciones" className="flex items-center gap-2">
+            <TabsTrigger value="estadisticas" className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Estadísticas
+            </TabsTrigger>
+            <TabsTrigger value="partidos" className="flex items-center gap-2">
               <Trophy className="w-4 h-4" />
-              Competiciones
+              Partidos
+            </TabsTrigger>
+            <TabsTrigger value="galeria" className="flex items-center gap-2">
+              <Image className="w-4 h-4" />
+              Galería
             </TabsTrigger>
           </TabsList>
 
@@ -237,58 +261,312 @@ export const TeamDetailPage = () => {
             </Card>
           </TabsContent>
 
-          {/* Competiciones Tab */}
-          <TabsContent value="competiciones">
+          {/* Estadísticas Detalladas Tab */}
+          <TabsContent value="estadisticas" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Target className="w-5 h-5 text-primary" />
+                    Goles
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {participants
+                      .filter(p => (p.goals_scored || 0) > 0)
+                      .sort((a, b) => (b.goals_scored || 0) - (a.goals_scored || 0))
+                      .slice(0, 5)
+                      .map(player => (
+                        <div key={player.id} className="flex justify-between items-center">
+                          <span className="text-sm font-medium">{player.name}</span>
+                          <Badge variant="secondary">{player.goals_scored}</Badge>
+                        </div>
+                      ))}
+                    {participants.filter(p => (p.goals_scored || 0) > 0).length === 0 && (
+                      <p className="text-sm text-muted-foreground">Sin goleadores aún</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Shield className="w-5 h-5 text-yellow-500" />
+                    Tarjetas Amarillas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {participants
+                      .filter(p => (p.yellow_cards || 0) > 0)
+                      .sort((a, b) => (b.yellow_cards || 0) - (a.yellow_cards || 0))
+                      .slice(0, 5)
+                      .map(player => (
+                        <div key={player.id} className="flex justify-between items-center">
+                          <span className="text-sm font-medium">{player.name}</span>
+                          <Badge variant="outline" className="bg-yellow-500/10">{player.yellow_cards}</Badge>
+                        </div>
+                      ))}
+                    {participants.filter(p => (p.yellow_cards || 0) > 0).length === 0 && (
+                      <p className="text-sm text-muted-foreground">Sin tarjetas amarillas</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Shield className="w-5 h-5 text-red-500" />
+                    Tarjetas Rojas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {participants
+                      .filter(p => (p.red_cards || 0) > 0)
+                      .sort((a, b) => (b.red_cards || 0) - (a.red_cards || 0))
+                      .slice(0, 5)
+                      .map(player => (
+                        <div key={player.id} className="flex justify-between items-center">
+                          <span className="text-sm font-medium">{player.name}</span>
+                          <Badge variant="outline" className="bg-red-500/10">{player.red_cards}</Badge>
+                        </div>
+                      ))}
+                    {participants.filter(p => (p.red_cards || 0) > 0).length === 0 && (
+                      <p className="text-sm text-muted-foreground">Sin tarjetas rojas</p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             <Card>
               <CardHeader>
-                <CardTitle>Competiciones</CardTitle>
+                <CardTitle>Estadísticas por Jugador</CardTitle>
               </CardHeader>
               <CardContent>
-                {events.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Trophy className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No hay competiciones registradas</p>
-                  </div>
-                ) : (
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {events.map((event) => (
-                      <Card key={event.id} className="hover-scale">
-                        <CardHeader className="pb-3">
-                          {event.poster_url && (
-                            <img 
-                              src={event.poster_url} 
-                              alt={event.title}
-                              className="w-full h-48 object-cover rounded-md mb-4"
-                            />
-                          )}
-                          <CardTitle className="text-lg">{event.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          {event.description && (
-                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                              {event.description}
-                            </p>
-                          )}
-                          <div className="space-y-2 text-sm">
-                            {event.date && (
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Calendar className="w-4 h-4" />
-                                {new Date(event.date).toLocaleDateString('es-ES', {
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric'
-                                })}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {participants.map(player => (
+                    <Card key={player.id} className="border-2">
+                      <CardContent className="pt-6">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-3">
+                            {player.photo_url ? (
+                              <img 
+                                src={player.photo_url} 
+                                alt={player.name}
+                                className="w-12 h-12 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                <Users className="w-6 h-6 text-primary" />
                               </div>
                             )}
-                            {event.location && (
-                              <p className="text-muted-foreground">
-                                📍 {event.location}
-                              </p>
-                            )}
+                            <div>
+                              <h4 className="font-semibold">{player.name}</h4>
+                              <p className="text-sm text-muted-foreground">#{player.number}</p>
+                            </div>
                           </div>
-                        </CardContent>
-                      </Card>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div className="bg-muted/50 p-2 rounded">
+                              <p className="text-muted-foreground">Partidos</p>
+                              <p className="font-semibold">{player.matches_played || 0}</p>
+                            </div>
+                            <div className="bg-muted/50 p-2 rounded">
+                              <p className="text-muted-foreground">Goles</p>
+                              <p className="font-semibold">{player.goals_scored || 0}</p>
+                            </div>
+                            <div className="bg-muted/50 p-2 rounded">
+                              <p className="text-muted-foreground">T. Amarillas</p>
+                              <p className="font-semibold">{player.yellow_cards || 0}</p>
+                            </div>
+                            <div className="bg-muted/50 p-2 rounded">
+                              <p className="text-muted-foreground">T. Rojas</p>
+                              <p className="font-semibold">{player.red_cards || 0}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Historial de Partidos Tab */}
+          <TabsContent value="partidos" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-primary" />
+                  Historial de Partidos
+                </CardTitle>
+                <CardDescription>
+                  Todos los partidos jugados por {team.name}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {matches.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Trophy className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No hay partidos registrados</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {matches.map(match => {
+                      const isHome = match.home_team_id === id;
+                      const teamScore = isHome ? match.home_score : match.away_score;
+                      const opponentScore = isHome ? match.away_score : match.home_score;
+                      const opponent = isHome ? match.away_team : match.home_team;
+                      
+                      const result = 
+                        teamScore === null || opponentScore === null 
+                          ? 'pending'
+                          : teamScore > opponentScore 
+                            ? 'win' 
+                            : teamScore < opponentScore 
+                              ? 'loss' 
+                              : 'draw';
+
+                      return (
+                        <Card key={match.id} className="border-2">
+                          <CardContent className="pt-6">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                              <div className="flex items-center gap-4 flex-1">
+                                <div className="flex flex-col items-center gap-2">
+                                  {match.event?.title && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {match.event.title}
+                                    </Badge>
+                                  )}
+                                  <Badge variant={
+                                    result === 'win' ? 'default' : 
+                                    result === 'loss' ? 'destructive' : 
+                                    result === 'draw' ? 'secondary' : 
+                                    'outline'
+                                  }>
+                                    {result === 'win' ? 'Victoria' : 
+                                     result === 'loss' ? 'Derrota' : 
+                                     result === 'draw' ? 'Empate' : 
+                                     match.status === 'completed' ? 'Finalizado' : 'Programado'}
+                                  </Badge>
+                                </div>
+                                
+                                <div className="flex items-center gap-4 flex-1">
+                                  <div className="flex items-center gap-2 flex-1">
+                                    {team.logo_url && (
+                                      <img src={team.logo_url} alt={team.name} className="w-8 h-8 object-contain" />
+                                    )}
+                                    <span className="font-semibold">{team.name}</span>
+                                  </div>
+                                  
+                                  <div className="text-center px-4">
+                                    {teamScore !== null && opponentScore !== null ? (
+                                      <span className="text-2xl font-bold">
+                                        {teamScore} - {opponentScore}
+                                      </span>
+                                    ) : (
+                                      <span className="text-xl text-muted-foreground">vs</span>
+                                    )}
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-2 flex-1 justify-end">
+                                    <span className="font-semibold">{opponent?.name}</span>
+                                    {opponent?.logo_url && (
+                                      <img src={opponent.logo_url} alt={opponent.name} className="w-8 h-8 object-contain" />
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="flex flex-col items-end gap-2 text-sm text-muted-foreground">
+                                {match.match_date && (
+                                  <div className="flex items-center gap-2">
+                                    <Calendar className="w-4 h-4" />
+                                    {new Date(match.match_date).toLocaleDateString('es-ES')}
+                                  </div>
+                                )}
+                                {match.phase && (
+                                  <Badge variant="outline">{match.phase}</Badge>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Galería Tab */}
+          <TabsContent value="galeria" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Image className="w-5 h-5 text-primary" />
+                  Galería del Equipo
+                </CardTitle>
+                <CardDescription>
+                  Fotos y momentos destacados de {team.name}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {team.logo_url && (
+                    <div className="aspect-square rounded-lg overflow-hidden bg-muted border-2">
+                      <img 
+                        src={team.logo_url} 
+                        alt={`Logo ${team.name}`}
+                        className="w-full h-full object-contain p-4"
+                      />
+                    </div>
+                  )}
+                  {participants
+                    .filter(p => p.photo_url)
+                    .map(player => (
+                      <div key={player.id} className="aspect-square rounded-lg overflow-hidden bg-muted border-2 group relative">
+                        <img 
+                          src={player.photo_url!} 
+                          alt={player.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                          <div className="text-white">
+                            <p className="font-semibold">{player.name}</p>
+                            <p className="text-sm">#{player.number} - {player.position}</p>
+                          </div>
+                        </div>
+                      </div>
                     ))}
+                  {events
+                    .filter(e => e.poster_url)
+                    .map(event => (
+                      <div key={event.id} className="aspect-square rounded-lg overflow-hidden bg-muted border-2 group relative">
+                        <img 
+                          src={event.poster_url!} 
+                          alt={event.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                          <div className="text-white">
+                            <p className="font-semibold">{event.title}</p>
+                            <p className="text-sm">{new Date(event.date).toLocaleDateString('es-ES')}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+                {!team.logo_url && participants.filter(p => p.photo_url).length === 0 && events.filter(e => e.poster_url).length === 0 && (
+                  <div className="text-center py-12">
+                    <Image className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No hay imágenes disponibles</p>
                   </div>
                 )}
               </CardContent>
