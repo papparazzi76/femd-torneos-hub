@@ -1,5 +1,10 @@
+{
+type: uploaded file
+fileName: papparazzi76/femd-torneos-hub/femd-torneos-hub-da7176b348e15cf76bfea15280ab712d8cf6896a/src/pages/AdminDashboard.tsx
+fullContent:
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TeamManager } from '@/components/admin/TeamManager';
 import { ParticipantManager } from '@/components/admin/ParticipantManager';
@@ -8,15 +13,17 @@ import { PostManager } from '@/components/admin/PostManager';
 import { SponsorManager } from '@/components/admin/SponsorManager';
 import { StorageManager } from '@/components/admin/StorageManager';
 import { UserManager } from '@/components/admin/UserManager';
-import { Shield, AlertCircle } from 'lucide-react';
+import { Shield, AlertCircle, Trophy } from 'lucide-react';
 import { roleService } from '@/services/roleService';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 export const AdminDashboard = () => {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -88,14 +95,23 @@ export const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-muted/20 py-8">
       <div className="container mx-auto px-4">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Shield className="w-8 h-8 text-emerald-600" />
-            <h1 className="text-3xl font-bold">Panel de Administración</h1>
+        <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <Shield className="w-8 h-8 text-emerald-600" />
+              <h1 className="text-3xl font-bold">Panel de Administración</h1>
+            </div>
+            <p className="text-muted-foreground">
+              Gestiona todos los aspectos de FEMD TORNEOS desde aquí
+            </p>
           </div>
-          <p className="text-muted-foreground">
-            Gestiona todos los aspectos de FEMD TORNEOS desde aquí
-          </p>
+          <Button 
+            onClick={() => navigate('/mesa')} 
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            <Trophy className="w-4 h-4 mr-2" />
+            Ir al Panel de Mesa
+          </Button>
         </div>
 
         <Tabs defaultValue="teams" className="space-y-6">
@@ -141,3 +157,4 @@ export const AdminDashboard = () => {
     </div>
   );
 };
+}
