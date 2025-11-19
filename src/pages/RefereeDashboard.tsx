@@ -1,7 +1,3 @@
-{
-type: uploaded file
-fileName: papparazzi76/femd-torneos-hub/femd-torneos-hub-da7176b348e15cf76bfea15280ab712d8cf6896a/src/pages/RefereeDashboard.tsx
-fullContent:
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,7 +10,7 @@ import { tournamentService } from '@/services/tournamentService';
 import { teamService } from '@/services/teamService';
 import { Match } from '@/types/tournament';
 import { Team } from '@/types/database';
-import { Loader2, LogOut, Calendar, Trophy, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Loader2, LogOut, Calendar, Trophy, AlertCircle } from 'lucide-react';
 import { MatchCard } from '@/components/referee/MatchCard';
 
 export const RefereeDashboard = () => {
@@ -23,7 +19,6 @@ export const RefereeDashboard = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [isMesa, setIsMesa] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [matches, setMatches] = useState<Match[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
 
@@ -41,10 +36,7 @@ export const RefereeDashboard = () => {
       setLoading(true);
       const roles = await roleService.getUserRoles(user.id);
       
-      const hasMesaRole = roles.includes('mesa');
-      const hasAdminRole = roles.includes('admin');
-
-      if (!hasMesaRole && !hasAdminRole) {
+      if (!roles.includes('mesa')) {
         toast({
           title: 'Acceso denegado',
           description: 'No tienes permisos para acceder a este panel',
@@ -55,8 +47,7 @@ export const RefereeDashboard = () => {
       }
 
       setIsMesa(true);
-      setIsAdmin(hasAdminRole);
-      await loadData(hasAdminRole);
+      await loadData();
     } catch (error) {
       console.error('Error verificando acceso:', error);
       toast({
@@ -70,22 +61,16 @@ export const RefereeDashboard = () => {
     }
   };
 
-  const loadData = async (asAdmin: boolean = false) => {
+  const loadData = async () => {
     if (!user) return;
 
     try {
-      let query = supabase
+      // Get all matches assigned to this referee
+      const { data: allMatches, error } = await supabase
         .from('matches')
         .select('*')
+        .eq('referee_user_id', user.id)
         .order('match_date', { ascending: true });
-
-      // Si no es admin, filtrar solo los partidos asignados
-      // Si es admin, se muestran TODOS los partidos ("tenerlo todo visible")
-      if (!asAdmin && !isAdmin) {
-        query = query.eq('referee_user_id', user.id);
-      }
-
-      const { data: allMatches, error } = await query;
 
       if (error) throw error;
 
@@ -119,8 +104,7 @@ export const RefereeDashboard = () => {
         description: 'Los datos del partido se guardaron correctamente',
       });
       
-      // Recargar datos manteniendo el contexto de admin si corresponde
-      loadData(isAdmin);
+      loadData();
     } catch (error) {
       console.error('Error actualizando partido:', error);
       toast({
@@ -151,7 +135,7 @@ export const RefereeDashboard = () => {
     );
   }
 
-  if (!isMesa && !isAdmin) {
+  if (!isMesa) {
     return null;
   }
 
@@ -165,33 +149,19 @@ export const RefereeDashboard = () => {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold mb-2">
-                {isAdmin ? 'Vista de Administrador - Mesas' : 'Panel de Mesa'}
-              </h1>
+              <h1 className="text-3xl font-bold mb-2">Panel de Mesa</h1>
               <p className="text-emerald-100">
                 Bienvenido, {user?.email}
               </p>
             </div>
-            <div className="flex gap-2">
-              {isAdmin && (
-                <Button
-                  variant="outline"
-                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-                  onClick={() => navigate('/admin')}
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Volver al Admin
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-                onClick={handleSignOut}
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Cerrar Sesión
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              onClick={handleSignOut}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Cerrar Sesión
+            </Button>
           </div>
         </div>
       </div>
@@ -240,11 +210,9 @@ export const RefereeDashboard = () => {
         {matches.length === 0 ? (
           <Card className="p-12 text-center">
             <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No hay partidos disponibles</h3>
+            <h3 className="text-xl font-semibold mb-2">No hay partidos asignados</h3>
             <p className="text-muted-foreground">
-              {isAdmin 
-                ? 'No hay partidos creados en el sistema.' 
-                : 'Aún no tienes partidos asignados. Contacta al administrador del torneo.'}
+              Aún no tienes partidos asignados. Contacta al administrador del torneo.
             </p>
           </Card>
         ) : (
@@ -279,7 +247,7 @@ export const RefereeDashboard = () => {
                       homeTeamName={getTeamName(match.home_team_id)}
                       awayTeamName={getTeamName(match.away_team_id)}
                       onUpdate={handleMatchUpdate}
-                      readOnly={!isAdmin} // Admins can edit completed matches if logic permits
+                      readOnly
                     />
                   ))}
                 </div>
@@ -291,4 +259,3 @@ export const RefereeDashboard = () => {
     </div>
   );
 };
-}
