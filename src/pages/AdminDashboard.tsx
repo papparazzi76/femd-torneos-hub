@@ -1,154 +1,290 @@
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TeamManager } from '@/components/admin/TeamManager';
-import { ParticipantManager } from '@/components/admin/ParticipantManager';
-import { EventManager } from '@/components/admin/EventManager';
-import { PostManager } from '@/components/admin/PostManager';
-import { SponsorManager } from '@/components/admin/SponsorManager';
-import { StorageManager } from '@/components/admin/StorageManager';
-import { UserManager } from '@/components/admin/UserManager';
-import { Shield, AlertCircle, Trophy } from 'lucide-react';
-import { roleService } from '@/services/roleService';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { roleService } from '@/services/roleService';
+import { tournamentService } from '@/services/tournamentService';
+import { teamService } from '@/services/teamService';
+import { Match } from '@/types/tournament';
+import { Team } from '@/types/database';
+import { Loader2, LogOut, Calendar, Trophy, AlertCircle, ArrowLeft } from 'lucide-react';
+import { MatchCard } from '@/components/referee/MatchCard';
 
-export const AdminDashboard = () => {
-  const { user } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+export const RefereeDashboard = () => {
+  const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [isMesa, setIsMesa] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!user) {
-        setLoading(false);
+    checkAccess();
+  }, [user]);
+
+  const checkAccess = async () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const roles = await roleService.getUserRoles(user.id);
+      
+      const hasMesaRole = roles.includes('mesa');
+      const hasAdminRole = roles.includes('admin');
+
+      // PERMITIR ACCESO SI ES MESA O ADMIN
+      if (!hasMesaRole && !hasAdminRole) {
+        toast({
+          title: 'Acceso denegado',
+          description: 'No tienes permisos para acceder a este panel',
+          variant: 'destructive',
+        });
+        navigate('/');
         return;
       }
 
-      try {
-        const result = await roleService.checkAdminStatus();
-        
-        if (result.error) {
-          console.error('Error verificando permisos de admin:', result.error);
-          toast({
-            title: "Error",
-            description: "No se pudo verificar los permisos de administrador",
-            variant: "destructive",
-          });
-        }
-        
-        setIsAdmin(result.isAdmin);
-      } catch (error) {
-        console.error('Error inesperado:', error);
-        setIsAdmin(false);
-      } finally {
-        setLoading(false);
+      setIsMesa(true);
+      setIsAdmin(hasAdminRole);
+      // Pasamos el flag de admin a loadData
+      await loadData(hasAdminRole);
+    } catch (error) {
+      console.error('Error verificando acceso:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo verificar el acceso',
+        variant: 'destructive',
+      });
+      navigate('/');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadData = async (userIsAdmin: boolean) => {
+    if (!user) return;
+
+    try {
+      let query = supabase
+        .from('matches')
+        .select('*')
+        .order('match_date', { ascending: true });
+
+      // Si NO es admin, filtramos solo sus partidos asignados.
+      // Si ES admin, no aplicamos filtro (ve todo).
+      if (!userIsAdmin) {
+        query = query.eq('referee_user_id', user.id);
       }
-    };
 
-    checkAdminStatus();
-  }, [user, toast]);
+      const { data: allMatches, error } = await query;
 
-  if (loading) {
+      if (error) throw error;
+
+      setMatches((allMatches || []) as Match[]);
+
+      // Get all teams
+      const teamsData = await teamService.getAll();
+      setTeams(teamsData);
+    } catch (error) {
+      console.error('Error cargando datos:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudieron cargar los partidos',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleMatchUpdate = async (matchId: string, updates: Partial<Match>) => {
+    try {
+      await tournamentService.updateMatch(matchId, updates);
+      
+      // Update statistics if scores are updated
+      const match = matches.find(m => m.id === matchId);
+      if (match && updates.home_score !== undefined && updates.away_score !== undefined) {
+        await tournamentService.updateTeamStatistics(match.event_id);
+      }
+
+      toast({
+        title: 'Partido actualizado',
+        description: 'Los datos del partido se guardaron correctamente',
+      });
+      
+      // Recargar datos manteniendo el contexto (si es admin o no)
+      loadData(isAdmin);
+    } catch (error) {
+      console.error('Error actualizando partido:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar el partido',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  const getTeamName = (teamId: string) => {
+    return teams.find(t => t.id === teamId)?.name || 'Equipo desconocido';
+  };
+
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/20">
-        <div className="text-center space-y-4 p-8 bg-background rounded-lg border border-border shadow-lg">
-          <AlertCircle className="w-12 h-12 mx-auto text-yellow-600" />
-          <h2 className="text-2xl font-bold">Acceso Restringido</h2>
-          <p className="text-muted-foreground">
-            Debes iniciar sesión para acceder al panel de administración.
-          </p>
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">Cargando panel...</p>
         </div>
       </div>
     );
   }
 
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/20">
-        <div className="text-center space-y-4 p-8 bg-background rounded-lg border border-border shadow-lg">
-          <Shield className="w-12 h-12 mx-auto text-red-600" />
-          <h2 className="text-2xl font-bold">Acceso Denegado</h2>
-          <p className="text-muted-foreground">
-            No tienes permisos de administrador para acceder a esta página.
-          </p>
-        </div>
-      </div>
-    );
+  if (!isMesa && !isAdmin) {
+    return null;
   }
+
+  const upcomingMatches = matches.filter(m => m.status === 'scheduled');
+  const completedMatches = matches.filter(m => m.status === 'finished');
 
   return (
-    <div className="min-h-screen bg-muted/20 py-8">
-      <div className="container mx-auto px-4">
-        <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <Shield className="w-8 h-8 text-emerald-600" />
-              <h1 className="text-3xl font-bold">Panel de Administración</h1>
+    <div className="min-h-screen bg-gradient-to-b from-muted/20 to-background">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white py-8">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">
+                {isAdmin ? 'Panel de Mesa (Vista Admin)' : 'Panel de Mesa'}
+              </h1>
+              <p className="text-emerald-100">
+                Bienvenido, {user?.email}
+              </p>
             </div>
-            <p className="text-muted-foreground">
-              Gestiona todos los aspectos de FEMD TORNEOS desde aquí
-            </p>
+            <div className="flex gap-2">
+              {isAdmin && (
+                <Button
+                  variant="outline"
+                  className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                  onClick={() => navigate('/admin')}
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Volver al Admin
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                onClick={handleSignOut}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Cerrar Sesión
+              </Button>
+            </div>
           </div>
-          <Button 
-            onClick={() => navigate('/mesa')} 
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
-          >
-            <Trophy className="w-4 h-4 mr-2" />
-            Ir al Panel de Mesa
-          </Button>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8">
+        {/* Stats */}
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <Card className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                <Trophy className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total de Partidos</p>
+                <p className="text-2xl font-bold">{matches.length}</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Pendientes</p>
+                <p className="text-2xl font-bold">{upcomingMatches.length}</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <Trophy className="w-6 h-6 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Completados</p>
+                <p className="text-2xl font-bold">{completedMatches.length}</p>
+              </div>
+            </div>
+          </Card>
         </div>
 
-        <Tabs defaultValue="teams" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 lg:w-auto">
-            <TabsTrigger value="teams">Equipos</TabsTrigger>
-            <TabsTrigger value="participants">Participantes</TabsTrigger>
-            <TabsTrigger value="events">Torneos</TabsTrigger>
-            <TabsTrigger value="posts">Noticias</TabsTrigger>
-            <TabsTrigger value="sponsors">Patrocinadores</TabsTrigger>
-            <TabsTrigger value="users">Usuarios</TabsTrigger>
-            <TabsTrigger value="storage">Archivos</TabsTrigger>
-          </TabsList>
+        {/* Matches */}
+        {matches.length === 0 ? (
+          <Card className="p-12 text-center">
+            <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-semibold mb-2">No hay partidos disponibles</h3>
+            <p className="text-muted-foreground">
+              {isAdmin 
+                ? 'No hay partidos registrados en el sistema.' 
+                : 'Aún no tienes partidos asignados. Contacta al administrador del torneo.'}
+            </p>
+          </Card>
+        ) : (
+          <div className="space-y-8">
+            {/* Upcoming Matches */}
+            {upcomingMatches.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold mb-4">Partidos Pendientes</h2>
+                <div className="grid gap-4">
+                  {upcomingMatches.map((match) => (
+                    <MatchCard
+                      key={match.id}
+                      match={match}
+                      homeTeamName={getTeamName(match.home_team_id)}
+                      awayTeamName={getTeamName(match.away_team_id)}
+                      onUpdate={handleMatchUpdate}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
-          <TabsContent value="teams" className="space-y-4">
-            <TeamManager />
-          </TabsContent>
-
-          <TabsContent value="participants" className="space-y-4">
-            <ParticipantManager />
-          </TabsContent>
-
-          <TabsContent value="events" className="space-y-4">
-            <EventManager />
-          </TabsContent>
-
-          <TabsContent value="posts" className="space-y-4">
-            <PostManager />
-          </TabsContent>
-
-          <TabsContent value="sponsors" className="space-y-4">
-            <SponsorManager />
-          </TabsContent>
-
-          <TabsContent value="users" className="space-y-4">
-            <UserManager />
-          </TabsContent>
-
-          <TabsContent value="storage" className="space-y-4">
-            <StorageManager />
-          </TabsContent>
-        </Tabs>
+            {/* Completed Matches */}
+            {completedMatches.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold mb-4">Partidos Completados</h2>
+                <div className="grid gap-4">
+                  {completedMatches.map((match) => (
+                    <MatchCard
+                      key={match.id}
+                      match={match}
+                      homeTeamName={getTeamName(match.home_team_id)}
+                      awayTeamName={getTeamName(match.away_team_id)}
+                      onUpdate={handleMatchUpdate}
+                      readOnly={!isAdmin} // Los admins pueden editar incluso si está completado
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
